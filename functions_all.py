@@ -147,7 +147,7 @@ def chooseExperimentMethod():
 
 # here, we look at the original dataset and place results in a matplotlib plot
 def printDataSetInfo():
-    print("inside getDataSetInfo()")
+    # print("inside getDataSetInfo()")
 
     currentDir = getcwd()
     photoPath = currentDir + "\\Notes_DataSet"
@@ -168,6 +168,8 @@ def printDataSetInfo():
 
     print("", spacers, "Total Number of Pictures in DataSet:", spacers, sep="\n")
     print(dataSetInfo[2][0][0], dataSetInfo[2][0][1])
+
+    tellUser("Printed in Terminal!", labelUpdates)
 ###
 
 def getDataSetInfo(path):
@@ -180,6 +182,7 @@ def getDataSetInfo(path):
     numPics = 0
     minX, maxX, minY, maxY = -1, -1, -1, -1
 
+    # path comes from os.path() --> enables traversal through directory
     for root, directories, files in path:
         for file in files:
             # get image size, by reading in as grayscale
@@ -205,6 +208,7 @@ def getDataSetInfo(path):
     absoluteDimensions = [["MinX", str(minX)], ["MaxX", str(maxX)], ["MinY", str(minY)], ["MaxY", str(maxY)]]
     totalPics = [["Total Pics", str(numPics)]]
 
+    # notice 3 X 2D shape
     return [dataSetSizes, absoluteDimensions, totalPics]
 ###
 
