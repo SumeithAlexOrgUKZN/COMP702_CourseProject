@@ -4,14 +4,14 @@ Authors:    Sumeith Ishwanthlal (219006284)
 
 Program name: bank_note_recognition.py
 
-Goal: Holds code for GUI
+Goal: Holds code for main GUI here
 
 Summary:
 
 '''
 #----------------------------------------------------------------------------------------------------------------Packages Below
 # global Vars to use
-from functions_all import window, labelUpdates, updateFrame, resizedWidth, resizedHeight
+from functions_all import chooseExperimentMethod, window, labelUpdates, updateFrame, resizedWidth, resizedHeight
 
 # PIL to find Image Path for image in GUI, tkinter for GUI
 from PIL import Image, ImageTk
@@ -58,6 +58,7 @@ buttonExperiment = tk.Button(
     width = resizedHeight // (10 * 2),
     height = 5, 
     bg = "silver",
+    command = chooseExperimentMethod
 )
 buttonClose = tk.Button(
     master = buttonFrame,
