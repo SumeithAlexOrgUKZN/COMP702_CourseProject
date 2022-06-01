@@ -14,10 +14,10 @@ Summary:
 
 # Tkinter is the GUI 
 import tkinter as tk
-from tkinter import Toplevel, Label
+from tkinter import Toplevel, Radiobutton, IntVar, Button, W, Label
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
-from os import getcwd, walk
+from os import getcwd, walk, mkdir
 
 # library for image manipulation
 import cv2
@@ -76,11 +76,11 @@ def chooseExperimentMethod():
     )
     button2= tk.Button(
         master = buttonFrameTop,
-        text = "2",
+        text = "Bulk Resize",
         width = 40,
         height = 5, 
         bg = "silver",
-        command = chooseExperimentMethod
+        command = conductResize
     )
     button3 = tk.Button(
         master = buttonFrameTop,
@@ -210,6 +210,67 @@ def getDataSetInfo(path):
 
     # notice 3 X 2D shape
     return [dataSetSizes, absoluteDimensions, totalPics]
+###
+
+def conductResize():
+    resizeWindow = Toplevel(window)
+    resizeWindow.title("Please enter some values")
+    resizeWindow.geometry("300x300")
+
+    xLabel = Label(resizeWindow, text="x = ...").pack() #used for reading instructions
+    xValue = tk.Entry(resizeWindow)
+    xValue.insert(0, "512")
+    xValue.pack() #must be seperate for some reason...
+
+    yLabel = Label(resizeWindow, text="y = ...").pack() #used for reading instructions
+    yValue = tk.Entry(resizeWindow)
+    yValue.insert(0, "1024")
+    yValue.pack() #must be seperate for some reason...
+
+    Button(resizeWindow, text="Do Bulk Resize", width=50, bg='gray',
+        command=lambda: bulkResize(x=int( xValue.get() ), y=int( yValue.get() ))
+    ).pack(anchor=W, side="top")
+###
+
+# conducts bulk resize based 
+def bulkResize(x, y):
+    # print("Inside bulkResize()")
+
+    currentDir = getcwd()
+    folder = "\\Notes_DataSet"
+    path = walk(currentDir + folder)
+    destinationFolder = currentDir + "\\Resized_Notes_DataSet"
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+    
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_COLOR)
+
+            resizedImage = cv2.resize(image, (y, x)) # note order
+            cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
+
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures Resized Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures resized...", labelUpdates)
 ###
 
 def showArrays(fig, array, numRows, numColumns):
