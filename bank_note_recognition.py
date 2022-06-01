@@ -4,7 +4,7 @@ Authors:    Sumeith Ishwanthlal (219006284)
 
 Program name: bank_note_recognition.py
 
-Goal:
+Goal: Holds code for GUI
 
 Summary:
 
