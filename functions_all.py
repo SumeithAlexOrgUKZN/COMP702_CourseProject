@@ -12,9 +12,17 @@ Summary:
 
 #----------------------------------------------------------------------------------------------------------------Packages Below
 
-# os for deleting files
+# Tkinter is the GUI 
 import tkinter as tk
-from tkinter import filedialog, Toplevel
+from tkinter import Toplevel, Label
+
+# getcwd == Get Current Working Directory, walk = traverses a directory
+from os import getcwd, walk
+
+# library for image manipulation
+import cv2
+
+from matplotlib import pyplot as plt
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -47,7 +55,7 @@ labelUpdates = tk.Label(
 
 # opens another window for user to select additional options
 def chooseExperimentMethod():
-    print("Inside chooseExperimentMethod()")
+    # print("Inside chooseExperimentMethod()")
 
     experimentWindow = Toplevel(window)
     experimentWindow.title("Choose further options below")
@@ -60,10 +68,11 @@ def chooseExperimentMethod():
 
     button1 = tk.Button(
         master = buttonFrameTop,
-        text = "1",
+        text = "Get DataSet Information",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = printDataSetInfo
     )
     button2= tk.Button(
         master = buttonFrameTop,
@@ -132,4 +141,95 @@ def chooseExperimentMethod():
     button1.pack(side = tk.LEFT); button2.pack(side = tk.LEFT); button3.pack(side = tk.RIGHT)
     button4.pack(side = tk.LEFT); button5.pack(side = tk.LEFT); button6.pack(side = tk.RIGHT)
     button7.pack(side = tk.LEFT); button8.pack(side = tk.LEFT); buttonClose.pack(side = tk.RIGHT)
+###
+
+#------------------------------------------------------------------------------------DataSet Exploration Functions--------------
+
+# here, we look at the original dataset and place results in a matplotlib plot
+def printDataSetInfo():
+    print("inside getDataSetInfo()")
+
+    currentDir = getcwd()
+    photoPath = currentDir + "\\Notes_DataSet"
+    path = walk(photoPath)
+
+    # 3 X 2D Array: Image Sizes, Min/Max Values, Num Pics
+    dataSetInfo = getDataSetInfo(path)
+
+    spacers = "-" * 60
+
+    print(spacers, "List of Image Sizes:", spacers, sep="\n")
+    for item in dataSetInfo[0]:
+        print(item[1])
+
+    print("", spacers, "Global minimum and maximum dimensions:", spacers, sep="\n")
+    for item in dataSetInfo[1]:
+        print(item[0], item[1])
+
+    print("", spacers, "Total Number of Pictures in DataSet:", spacers, sep="\n")
+    print(dataSetInfo[2][0][0], dataSetInfo[2][0][1])
+###
+
+def getDataSetInfo(path):
+    dataSetSizes = [["Example File Name", "Distinct Image Size"]]
+    absoluteDimensions = [[]]
+    totalPics = [[]]
+
+    temp = ""
+    template = []
+    numPics = 0
+    minX, maxX, minY, maxY = -1, -1, -1, -1
+
+    for root, directories, files in path:
+        for file in files:
+            # get image size, by reading in as grayscale
+            image = cv2.imread("Notes_DataSet" + "\\" + file, 0)
+            (x, y) = image.shape
+            temp = "(" + str(x) + "," + str(y) + ")"
+
+            # instantiate min and max vars
+            if (numPics == 0):
+                minX, maxX = x, x; minY, maxY = y, y
+            elif (x < minX): minX = x
+            elif (y < minY): minY = y
+            elif (x > maxX): maxX = x
+            elif (y > maxY): maxY = y
+
+            # only place unique dimensions
+            if (temp not in template):
+                template.append(temp)
+                dataSetSizes.append( [ file, temp ] )
+            
+            numPics += 1
+    
+    absoluteDimensions = [["MinX", str(minX)], ["MaxX", str(maxX)], ["MinY", str(minY)], ["MaxY", str(maxY)]]
+    totalPics = [["Total Pics", str(numPics)]]
+
+    return [dataSetSizes, absoluteDimensions, totalPics]
+###
+
+def showArrays(fig, array, numRows, numColumns):
+    for i in range(len(array)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.table(cellText=array[i], loc='center')
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    plt.show()
+
+    tellUser("Changes displayed...", labelUpdates)
+###
+
+#------------------------------------------------------------------------------------Other Functions Below----------------------
+
+# places updated label for user
+def tellUser(str, label):
+    oldText = label.cget("text")
+    endStr = " - Watch this space for more updates..."
+    newText = str + endStr
+
+    #updates incase user sees same message twice
+    if (oldText == newText):
+        newText += "(NEW)"
+    label.config(text = newText) #global var
 ###

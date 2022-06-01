@@ -29,7 +29,7 @@ buttonFrame = tk.Frame()
 #------------------------------------------------------------------------------------Labels Below-------------------------------
 currentDir = getcwd()
 # lets us add image inside Label
-photoPath = Image.open(currentDir + "/Notes_DataSet/010_back_youngMandela_1.jpeg")
+photoPath = Image.open(currentDir + "\\Notes_DataSet\\010_back_youngMandela_1.jpeg")
 
 resizedPhoto = photoPath.resize( (resizedHeight, resizedWidth), Image.ANTIALIAS)
 photo = ImageTk.PhotoImage(resizedPhoto)
