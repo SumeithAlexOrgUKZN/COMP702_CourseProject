@@ -122,10 +122,11 @@ def chooseExperimentMethod():
     )
     button7 = tk.Button(
         master = buttonFrameMiddle1,
-        text = "7",
+        text = "Smooth an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        comman = chooseSmoothing
     )
     button8 = tk.Button(
         master = buttonFrameMiddle1,
@@ -799,6 +800,110 @@ def displayHist(img, str):
     plt.hist(img.ravel(), bins=256, range=[0,256])
     plt.xlabel('Gray Levels')
     plt.ylabel('Frequencies')
+###
+
+#------------------------------------------------------------------------------------Smoothing Functions Below------------------
+
+def chooseSmoothing():
+    window.filename = openGUI("Select an Image to Smooth")
+    success, imgGrayscale = imgToGrayscale(window.filename)
+
+    if (success):
+        # Open new window to choose enhancement
+        smoothingWindow = Toplevel(window)
+        smoothingWindow.title("Image Enhancements Below")
+        smoothingWindow.geometry("300x300")
+
+        enhanceOption = IntVar()
+        enhanceOption.set(0)
+        
+        Radiobutton(smoothingWindow, text="Simple Smoothing", variable=enhanceOption, value=1).pack(anchor=W)
+        Radiobutton(smoothingWindow, text="Moving Average Smoothing", variable=enhanceOption, value=2).pack(anchor=W)
+        Radiobutton(smoothingWindow, text="Gaussian Smoothing", variable=enhanceOption, value=3).pack(anchor=W)
+        Radiobutton(smoothingWindow, text="Median Smoothing", variable=enhanceOption, value=4).pack(anchor=W)
+        # Radiobutton(smoothingWindow, text="Power Law (Gamma) Transformations", variable=enhanceOption, value=5).pack(anchor=W)
+
+        arrayLabel = Label(smoothingWindow, text="Array Square Size = ...").pack() #used for reading instructions
+        arrayValue = tk.Entry(smoothingWindow)
+        arrayValue.insert(0, "3")
+        arrayValue.pack() #must be seperate for some reason...
+
+        Button(
+            smoothingWindow, text="Smooth", width=35, bg='silver',
+            command=lambda: executeSmoothing(
+                                intVal=enhanceOption.get(), 
+                                arraySize=int(arrayValue.get()),
+                                img=imgGrayscale, 
+                                imgName=window.filename
+                            ) 
+        ).pack()
+        # Button above sends the user elsewhere
+
+        Button(smoothingWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
+        
+    else:
+        tellUser("Unable to Get Grayscale Image for Smoothing Window...", labelUpdates)
+###
+
+def executeSmoothing(intVal, arraySize, img, imgName):
+    tellUser("Opening now...", labelUpdates)
+
+    fig = plt.figure(num="Smoothing", figsize=(8, 5))
+    plt.clf() # Should clear last plot but keep window open? 
+
+    fig.add_subplot(1, 2, 1)
+    message = "B\W JPG Image of: " + getFileName(imgName)
+    plt.imshow(img, cmap='gray')
+    plt.title(message, wrap=True)
+    plt.axis('off') #Removes axes
+
+    fig.add_subplot(1, 2, 2)
+    if (intVal == 1):
+        # histEqualization(img, imgName, fig)
+        simpleSmooth(img, imgName, arraySize)
+    elif (intVal == 2):
+        movingAverageSmooth(img, imgName, arraySize)
+    elif (intVal == 3):
+        gaussianSmooth(img, imgName, arraySize)
+    else:
+        medianSmooth(img, imgName, arraySize)
+
+    plt.tight_layout() # Prevents title overlap in display
+    plt.show()   
+###
+
+def medianSmooth(img, imgName, arraySize):
+    median = cv2.medianBlur(img,arraySize)
+    plt.imshow(median, cmap='gray')
+    plt.title('Median Smooth of '+ getFileName(imgName), wrap=True)
+    plt.axis('off') #Removes axes
+###
+
+def gaussianSmooth(img, imgName, arraySize):
+    blur = cv2.GaussianBlur(img,(arraySize,arraySize),0)
+    plt.imshow(blur, cmap='gray')
+    plt.title('Gaussian Smooth of '+ getFileName(imgName), wrap=True)
+    plt.axis('off') #Removes axes
+###
+
+def movingAverageSmooth(img, imgName, arraySize):
+    kernel = np.ones((arraySize,arraySize), np.float32)/(arraySize * arraySize) # fills with all 1s
+    dst = cv2.filter2D(img,-1,kernel)
+    
+    plt.subplot(122)
+    plt.imshow(dst, cmap='gray')
+    plt.title('Moving Average Smooth of '+ getFileName(imgName), wrap=True)
+    plt.axis('off') #Removes axes
+###
+
+def simpleSmooth(img, imgName, arraySize):
+    kernel = np.full((arraySize,arraySize), 1/(arraySize * arraySize)) # fills with numbers in array
+    dst = cv2.filter2D(img,-1,kernel)
+    
+    plt.subplot(122)
+    plt.imshow(dst, cmap='gray')
+    plt.title('Simple Smooth of '+ getFileName(imgName), wrap=True)
+    plt.axis('off') #Removes axes
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
