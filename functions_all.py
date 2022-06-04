@@ -29,6 +29,10 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from skimage.segmentation import felzenszwalb # type of segmentation method
+from mahotas import haar # used for haar transform
+from scipy import fft # used for dct transform
+from numpy import r_ # used in DCT compression
+from scipy.fftpack import dct, idct # used for Compression
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -164,10 +168,11 @@ def chooseExperimentMethod():
     )
     button12 = tk.Button(
         master = buttonFrameMiddle2,
-        text = "12",
+        text = "Transform an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseImageTransformation
     )
     button13 = tk.Button(
         master = buttonFrameBottom1,
@@ -1908,6 +1913,109 @@ def executeThresholdingChoice(intVal, img, imgName):
 
         plt.tight_layout()
         plt.show()
+
+    else:
+        # should never execute
+        tellUser("Select an option...", labelUpdates)
+###
+
+#------------------------------------------------------------------------------------Image Transformation Functions-------------
+
+def chooseImageTransformation():
+    # print("Inside chooseImageTransformationOption()")
+
+    window.filename = openGUI("Select an Image...")
+
+    success, imgGrayscale= imgToGrayscale(window.filename)
+
+    if (success):
+        imageTransformationWindow = Toplevel(window)
+        imageTransformationWindow.title("Choose a kind of Image Transformation...")
+        imageTransformationWindow.geometry("300x300")
+
+        imageTransformOption = IntVar()
+        imageTransformOption.set(0)
+
+        Radiobutton(imageTransformationWindow, text="Apply Fourier Transform", variable=imageTransformOption, value=1, width=30).pack(anchor=W, side="top")
+        Radiobutton(imageTransformationWindow, text="Apply Haar Transform", variable=imageTransformOption, value=2, width=30).pack(anchor=W, side="top")
+        Radiobutton(imageTransformationWindow, text="Apply Discrete Cosine Transform", variable=imageTransformOption, value=3, width=30).pack(anchor=W, side="top")
+
+        Button(imageTransformationWindow, text="Choose Segmentation Option", width=50, bg='gray',
+            command=lambda: executeImageTransformationChoice(intVal=imageTransformOption.get(), img=imgGrayscale, imgName=window.filename)
+        ).pack(anchor=W, side="top")
+        Button(imageTransformationWindow, text="Close Plots", width=50, bg='gray',
+            command=lambda: ( plt.close("Image Transformation Changes") )
+        ).pack(anchor=W, side="top")
+    else:
+        tellUser("Unable to Get Grayscale Image for Image Transformation Window...", labelUpdates)
+###
+
+def executeImageTransformationChoice(intVal, img, imgName):
+    # print("Inside executeImageTransformationOption()")
+
+    fig = plt.figure(num="Image Transformation Changes", figsize=(8, 4))
+    plt.clf() # Should clear last plot but keep window open? 
+    numRows = 1 # used in matplotlib function below
+    numColumns = 2 # used in matplotlib function below
+
+    if (intVal == 1):
+        # Fourier Transform
+        numRows = 2
+        numColumns = 2
+
+        # discrete fourier transformation
+        dft = cv2.dft(np.float32(img),flags = cv2.DFT_COMPLEX_OUTPUT)
+        dft_shift = np.fft.fftshift(dft)
+        magnitude_spectrum = 20 * np.log(cv2.magnitude(dft_shift[:,:,0],dft_shift[:,:,1])) # fourier transformed image
+
+        rows, cols = img.shape
+        crow, ccol = rows//2 , cols//2
+
+        # create a mask first, center square is 1, remaining all zeros
+        mask1 = np.zeros((rows,cols,2),np.uint8)
+        mask1[crow-30:crow+30, ccol-30:ccol+30] = 1
+
+        # apply mask and inverse DFT --> Low Pass Filter
+        fshift_low_pass = dft_shift*mask1
+        f_ishift_low_pass = np.fft.ifftshift(fshift_low_pass)
+        img_back_low_pass = cv2.idft(f_ishift_low_pass)
+        img_back_low_pass = cv2.magnitude(img_back_low_pass[:,:,0],img_back_low_pass[:,:,1])
+
+        # High Pass Filter
+        mask2 = np.fft.fftshift(np.fft.fft2(img))
+        mask2[crow-30:crow+30, ccol-30:ccol+30] = 0
+        f_ishift_high_pass = np.fft.ifftshift(mask2)
+        img_back_high_pass = np.fft.ifft2(f_ishift_high_pass)
+        img_back_high_pass = np.log(np.abs(img_back_high_pass))
+
+        modifiedImageArray = [img, magnitude_spectrum, img_back_low_pass, img_back_high_pass]
+        labelArray = ["Original Image", "Magnitude Spectrum", "Low Pass Filter", "High Pass Filter"]
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+
+    elif (intVal == 2):
+        #Haar Transform
+
+        # haar method comes from mahotas package
+        haar_transform = haar(img)
+
+        modifiedImageArray = [img, haar_transform]
+        labelArray = ["Original Image", "Haar Transform"]
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+
+    elif (intVal == 3):
+        numRows = 1
+        numColumns = 3
+
+        # Discrete Cosine Transform, from scipy package
+        dct_img = fft.dct(img)
+        idct_img = fft.idct(dct_img)
+
+        modifiedImageArray = [img, dct_img, idct_img]
+        labelArray = ["Original Image", "DCT Image Spectrum", "DCT Transformed Image"]
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
 
     else:
         # should never execute
