@@ -13,15 +13,17 @@ Summary:
 #----------------------------------------------------------------------------------------------------------------Packages Below
 
 # Tkinter is the GUI 
+from cProfile import label
 import tkinter as tk
 from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
-from os import getcwd, walk, mkdir
+from os import getcwd, walk, mkdir, remove
 from types import NoneType
 
 # library for image manipulation
 import cv2
+from cv2 import IMREAD_GRAYSCALE
 
 from matplotlib import pyplot as plt
 import numpy as np
@@ -104,10 +106,11 @@ def chooseExperimentMethod():
     )
     button5 = tk.Button(
         master = buttonFrameMiddle1,
-        text = "5",
+        text = "Convert an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = convertTheImage
     )
     button6 = tk.Button(
         master = buttonFrameMiddle1,
@@ -511,6 +514,104 @@ def bulkResize(x, y):
         tellUser("Not all pictures resized...", labelUpdates)
 ###
 
+#------------------------------------------------------------------------------------Converting Functions Below-----------------
+
+def convertTheImage():
+    # open new window - choose Grayscale or Binary
+    convertWindow = Toplevel(window)
+    convertWindow.title("Convert to...")
+    convertWindow.geometry("300x300")
+
+    enhanceOption = IntVar()
+    enhanceOption.set(0)
+
+    Radiobutton(convertWindow, text="Grayscale Conversion", variable=enhanceOption, value=1).pack(anchor=W)
+    Radiobutton(convertWindow, text="Binary Conversion", variable=enhanceOption, value=2).pack(anchor=W)
+
+    Button(convertWindow, text="Convert and Show", width=35, bg='silver',
+            command=lambda: executeConversion(intVal=enhanceOption.get(), show=True) 
+        ).pack()
+    Button(convertWindow, text="Convert and Save", width=35, bg='silver',
+            command=lambda: executeConversion(intVal=enhanceOption.get(), show=False) 
+        ).pack()
+###
+
+def executeConversion(intVal, show):
+    window.filename = openGUI("Select an Image to convert to Grayscale")
+
+    if (intVal == 1):
+        success, img = imgToGrayscale(window.filename)
+    else:
+        success, img = imgToBinary(window.filename)
+
+    if (success):
+        if (show):
+            tellUser("Image shown!", labelUpdates)
+            cv2.imshow("Converted Image", img)
+        else:
+            if (intVal == 1):
+                aString = "Grayscale_"
+            else:
+                aString = "Binary_"
+            
+            aString += getFileName(window.filename)
+
+            # create directory
+            destinationFolder = "Converted_Notes_DataSet"
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+            
+            writtenSuccessfully = cv2.imwrite(destinationFolder + "\\" + aString, img)
+            if (writtenSuccessfully):
+                tellUser("Conversion successful!", labelUpdates)
+            else:
+                tellUser("Unable to write the converted image...", labelUpdates)
+    else:
+        tellUser("Conversion unsuccessful...", labelUpdates)
+###
+
+def imgToBinary(name):
+
+    success = False
+    img = [[]]
+
+    success, img = imgToGrayscale(name)
+
+    if (success):
+        success, binaryImage = cv2.threshold(img, 125, 255, cv2.THRESH_BINARY)
+
+        if (success):
+            return True, binaryImage
+        else:
+            tellUser("Unable to get the Binary Image", labelUpdates)
+    else:
+        tellUser("Unable to get the Grayscale Image", labelUpdates)
+    
+###
+
+def imgToGrayscale(name):
+    success = False
+    img = [[]]
+
+    success, img = getImage(name)
+
+    if (success):
+        # temporarily write it, then read it as grayscale, then delete temp file
+        cv2.imwrite("temp_pic.jpg", img)
+        pic = cv2.imread("temp_pic.jpg", cv2.IMREAD_GRAYSCALE)
+        remove("temp_pic.jpg")
+
+        return True, pic
+    else:
+        tellUser("Unable to get the Grayscale Image", labelUpdates)
+###
+
+
 #------------------------------------------------------------------------------------Other Functions Below----------------------
 
 # places updated label for user
@@ -537,4 +638,9 @@ def openGUI(message):
     )
 
     return temp
+###
+
+def getFileName(path):
+    backslashLocation = path.rfind("/")
+    return path[ backslashLocation + 1 : ]
 ###
