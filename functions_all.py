@@ -176,10 +176,11 @@ def chooseExperimentMethod():
     )
     button13 = tk.Button(
         master = buttonFrameBottom1,
-        text = "13",
+        text = "Compress an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseCompression
     )
     button14 = tk.Button(
         master = buttonFrameBottom1,
@@ -2020,6 +2021,93 @@ def executeImageTransformationChoice(intVal, img, imgName):
     else:
         # should never execute
         tellUser("Select an option...", labelUpdates)
+###
+
+#------------------------------------------------------------------------------------Compression Functions Below----------------
+
+def chooseCompression():
+    # print("Inside chooseImageTransformationOption()")
+
+    window.filename = openGUI("Select an Image...")
+
+    success, imgGrayscale= imgToGrayscale(window.filename)
+
+    if (success):
+        compressionWindow = Toplevel(window)
+        compressionWindow.title("Choose a kind of Image Transformation...")
+        compressionWindow.geometry("300x300")
+
+        compressOption = IntVar()
+        compressOption.set(0)
+
+        Radiobutton(compressionWindow, text="Apply DCT Compression", variable=compressOption, value=1, width=30).pack(anchor=W, side="top")
+
+        Button(compressionWindow, text="Choose Compresion Option", width=50, bg='gray',
+            command=lambda: executeCompressionChoice(intVal=compressOption.get(), img=imgGrayscale, imgName=window.filename)
+        ).pack(anchor=W, side="top")
+        Button(compressionWindow, text="Close Plots", width=50, bg='gray',
+            command=lambda: ( plt.close("Compression Changes") )
+        ).pack(anchor=W, side="top")
+    else:
+        tellUser("Unable to Get Grayscale Image for Compression Window...", labelUpdates)
+###
+
+
+
+def executeCompressionChoice(intVal, img, imgName):
+    # print("Inside executeCompressionOption()")
+
+    fig = plt.figure(num="Compression Changes", figsize=(8, 4))
+    plt.clf() # Should clear last plot but keep window open? 
+    numRows = 1 # used in matplotlib function below
+    numColumns = 2 # used in matplotlib function below
+
+    if (intVal == 1):
+        # DCT compression
+
+        imgsize = img.shape
+        dct = np.zeros(imgsize)
+
+        # Do 8x8 DCT on image (in-place)
+        for i in r_[:imgsize[0]:8]:
+            for j in r_[:imgsize[1]:8]:
+                dct[i:(i+8),j:(j+8)] = dct2( img[i:(i+8),j:(j+8)] )
+
+        pos = 128
+        # 8X8 image block
+        img_slice = img[pos:pos+8,pos:pos+8]
+        # An 8X8 dct block
+        dct_slice = dct[pos:pos+8,pos:pos+8]
+
+        # Threshold our dct image
+        thresh = 0.012
+        dct_thresh = dct * (abs(dct) > (thresh*np.max(dct)))
+
+        # Use thresholded image to compress
+        img_idct = np.zeros(imgsize)
+
+        for i in r_[:imgsize[0]:8]:
+            for j in r_[:imgsize[1]:8]:
+                img_idct[i:(i+8),j:(j+8)] = idct2( dct_thresh[i:(i+8),j:(j+8)] )
+
+        numRows = 2
+        numColumns = 3
+        modifiedImageArray = [img, dct, img_slice, dct_slice, dct_thresh, img_idct]
+        labelArray = ["Original Image", "DCT Image", "An 8X8 Image block", "An 8X8 DCT Block", "DCT Thresholding", "Using DCT to compress"]
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+
+    else:
+        # should never execute
+        tellUser("Select an option...", labelUpdates)
+###
+
+def dct2(a):
+    return dct( dct( a, axis=0, norm='ortho' ), axis=1, norm='ortho' )
+###
+
+def idct2(a):
+    return idct( idct( a, axis=0 , norm='ortho'), axis=1 , norm='ortho')
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
