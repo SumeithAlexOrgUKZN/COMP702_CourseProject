@@ -366,8 +366,8 @@ def openTheImage():
         success, img = getRAW(window.filename)
     # elif ("binary" in window.filename):
     #     success = displayBinary(window.filename)
-    # else:
-    #     success = displayImage(window.filename)
+    else:
+        success, img = getImage(window.filename)
 
     if (success):
         tellUser("Image opened successfully", labelUpdates)
@@ -380,10 +380,43 @@ def openTheImage():
 ###
 
 def getRAW(imgName):
-    print("TODO")
-    return False, NoneType
+    tellUser("We will try do this for 512 X 512", labelUpdates)
+    print("We will try do this for 512 X 512")
+    try:
+        # open file in text format, 'rb' == binary format for reading
+        fd = open(imgName, 'rb') # BufferedReader Stream
+
+        # uint8 --> 8 bit image
+        # originalFile = np.fromfile(imgName, dtype=np.uint8)
+        # print("Shape:", originalFile.shape) # shows us shape
+
+        # TODO how flexibly discover this? For now, only worry about lena_gray.raw...
+        rows = 512
+        cols = 512
+
+        # construct array from data in binary file
+        f = np.fromfile(fd, dtype = np.uint8, count = rows * cols)
+        image = f.reshape((rows, cols)) # (rows, cols) == 1st parameter
+
+        # print(image) #Array containing values
+
+        fd.close()
+        return True, image
+
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
 ###
 
+def getImage(imgName):
+    try:
+        image = cv2.imread(imgName)
+
+        return True, image
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
+###
 
 def getGIF(imgName):
     vid_capture = cv2.VideoCapture(imgName)
