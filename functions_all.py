@@ -130,10 +130,11 @@ def chooseExperimentMethod():
     )
     button8 = tk.Button(
         master = buttonFrameMiddle1,
-        text = "8",
+        text = "Sharpen an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseSharpening
     )
     button9 = tk.Button(
         master = buttonFrameMiddle2,
@@ -904,6 +905,56 @@ def simpleSmooth(img, imgName, arraySize):
     plt.imshow(dst, cmap='gray')
     plt.title('Simple Smooth of '+ getFileName(imgName), wrap=True)
     plt.axis('off') #Removes axes
+###
+
+#------------------------------------------------------------------------------------Sharpening Functions Below-----------------
+
+def chooseSharpening():
+    window.filename = openGUI("Select an Image to Sharpen")
+    success, imgGrayscale = imgToGrayscale(window.filename)
+
+    if (success):
+        # Open new window to choose enhancement
+        # sharpenWindow = Toplevel(window)
+        # sharpenWindow.title("Image Sharpened Below")
+        # sharpenWindow.geometry("300x300")
+
+        figure = plt.figure(num="Sharpening", figsize=(10, 5))
+
+        executeSharpening(imgGrayscale, imgName=window.filename, fig=figure) 
+        
+    else:
+        tellUser("Unable to Get Grayscale Image for Sharpening Window...", labelUpdates)
+###
+
+def executeSharpening(imgGrayscale, imgName, fig):
+    # This filter is enough!
+    # kernel = np.array([ [0, -1, 0], 
+    #                     [-1, 5, -1], 
+    #                     [0, -1, 0] ])
+    # blur = cv2.filter2D(imgGrayscale,-1,kernel)
+    
+    blur = cv2.medianBlur(imgGrayscale, 3)
+    edgesOnly = imgGrayscale - blur
+    sharpenedImage = imgGrayscale + edgesOnly
+
+    fig.add_subplot(1, 3, 1)
+    plt.imshow(imgGrayscale, cmap='gray')
+    plt.title('B\W Image of: '+ getFileName(imgName), wrap=True)
+    plt.axis('off')
+
+    fig.add_subplot(1, 3, 2)
+    plt.imshow(edgesOnly, cmap='gray')
+    plt.title('Edges of: '+ getFileName(imgName), wrap=True)
+    plt.axis('off')
+
+    fig.add_subplot(1, 3, 3)
+    plt.imshow(sharpenedImage, cmap='gray')
+    plt.title('Sharpened Image of: '+ getFileName(imgName), wrap=True)
+    plt.axis('off')
+
+    plt.tight_layout() # Prevents title overlap in display
+    plt.show()
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
