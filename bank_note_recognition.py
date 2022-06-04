@@ -89,6 +89,6 @@ print("\n---Program Starting---")
 # open the window
 window.mainloop()
 
-print("\n---Program Ending---")
+print("\n---Program Ending---\n")
 
 #------------------------------------------------------------------------------------------------------------------Program Below

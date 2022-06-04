@@ -84,7 +84,7 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        command = conductResize
+        command = conductBulkResize
     )
     button3 = tk.Button(
         master = buttonFrameTop,
@@ -96,10 +96,11 @@ def chooseExperimentMethod():
     )
     button4 = tk.Button(
         master = buttonFrameTop,
-        text = "4",
+        text = "Resize an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = resizeTheImage
     )
     button5 = tk.Button(
         master = buttonFrameMiddle1,
@@ -280,7 +281,176 @@ def getDataSetInfo(path):
     return [dataSetSizes, absoluteDimensions, totalPics]
 ###
 
-def conductResize():
+def showArrays(fig, array, numRows, numColumns):
+    for i in range(len(array)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.table(cellText=array[i], loc='center')
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    plt.show()
+
+    tellUser("Changes displayed...", labelUpdates)
+###
+
+#------------------------------------------------------------------------------------Open Any Image Functions-------------------
+
+def openTheImage():
+    window.filename = openGUI("Select an Image to Open")
+    success = False
+    img = [[]]
+
+    success, img = getImage(window.filename)
+
+    if (success):
+        tellUser("Image opened successfully", labelUpdates)
+
+        cv2.imshow(window.filename, img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows() #Upon Keypress, close window
+    else:
+        tellUser("Something went wrong... Unable to open", labelUpdates)
+###
+
+def getImage(name):
+    if name.endswith(".gif"):
+        success, img = getGIF(window.filename)
+    elif name.endswith(".raw"):
+        success, img = getRAW(window.filename)
+    # elif ("binary" in name):
+    #     success = displayBinary(name)
+    else:
+        success, img = getPicture(name)
+
+    if (success):
+        return True, img
+    else:
+        return False, NoneType
+###
+
+def getRAW(imgName):
+    tellUser("We will try do this for 512 X 512", labelUpdates)
+    print("We will try do this for 512 X 512")
+    try:
+        # open file in text format, 'rb' == binary format for reading
+        fd = open(imgName, 'rb') # BufferedReader Stream
+
+        # uint8 --> 8 bit image
+        # originalFile = np.fromfile(imgName, dtype=np.uint8)
+        # print("Shape:", originalFile.shape) # shows us shape
+
+        # TODO how flexibly discover this? For now, only worry about lena_gray.raw...
+        rows = 512
+        cols = 512
+
+        # construct array from data in binary file
+        f = np.fromfile(fd, dtype = np.uint8, count = rows * cols)
+        image = f.reshape((rows, cols)) # (rows, cols) == 1st parameter
+
+        # print(image) #Array containing values
+
+        fd.close()
+        return True, image
+
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
+###
+
+def getPicture(imgName):
+    try:
+        image = cv2.imread(imgName)
+
+        return True, image
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
+###
+
+def getGIF(imgName):
+    vid_capture = cv2.VideoCapture(imgName)
+
+    if (vid_capture.isOpened() == False):
+        tellUser("Error opening the video file", labelUpdates)
+        return False, NoneType # need to return tuple
+    else:
+        fps = vid_capture.get(5)
+        # print('Frames per second : ', fps, 'FPS')
+
+        frameCount = vid_capture.get(7)
+        # print('Frame count : ', frame_count)
+
+    while(vid_capture.isOpened()):
+        readyToRead, frame = vid_capture.read()
+
+        if readyToRead:
+            # cv2.imshow(imgName, frame)
+            vid_capture.release()
+            cv2.destroyAllWindows()
+
+            return True, frame
+            
+    return False, NoneType # need to return tuple
+###
+
+#------------------------------------------------------------------------------------Resize an Image Functions------------------
+
+def resizeTheImage():
+    window.filename = openGUI("Select an Image to Resize")
+    success = False
+    img = [[]]
+
+    success, img = getImage(window.filename)
+
+    if (success):
+        conductIndividualResize(img)
+    else:
+        tellUser("Something went wrong... Unable to resize", labelUpdates)
+###
+
+def conductIndividualResize(image):
+    resizeWindow = Toplevel(window)
+    resizeWindow.title("Please enter some values")
+    resizeWindow.geometry("300x300")
+
+    xLabel = Label(resizeWindow, text="x = ...").pack() #used for reading instructions
+    xValue = tk.Entry(resizeWindow)
+    xValue.insert(0, "512")
+    xValue.pack() #must be seperate for some reason...
+
+    yLabel = Label(resizeWindow, text="y = ...").pack() #used for reading instructions
+    yValue = tk.Entry(resizeWindow)
+    yValue.insert(0, "1024")
+    yValue.pack() #must be seperate for some reason...
+
+    Button(resizeWindow, text="Do Individual Resize", width=50, bg='gray',
+        command=lambda: individualResize(x=int( xValue.get() ), y=int( yValue.get() ), img = image)
+    ).pack(anchor=W, side="top")
+###
+
+def individualResize(x, y, img):
+    # print("Inside individualResize()")
+
+    currentDir = getcwd()
+    folder = "\\Notes_DataSet"
+    path = walk(currentDir + folder)
+    destinationFolder = currentDir + "\\Resized_Notes_DataSet"
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    resizedImage = cv2.resize(img, (y, x)) # note order
+    aString = "Resized to (" + str(x) + "," + str(y) + ")"
+    cv2.imshow(aString, resizedImage)
+###
+
+def conductBulkResize():
     resizeWindow = Toplevel(window)
     resizeWindow.title("Please enter some values")
     resizeWindow.geometry("300x300")
@@ -324,7 +494,7 @@ def bulkResize(x, y):
             count1 += 1
 
             temp = currentDir + folder + "\\" + file
-            image = cv2.imread(temp, cv2.IMREAD_COLOR)
+            image = cv2.imread(temp, cv2.IMREAD_UNCHANGED)
 
             resizedImage = cv2.resize(image, (y, x)) # note order
             cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
@@ -339,109 +509,6 @@ def bulkResize(x, y):
         tellUser("Pictures Resized Successfully", labelUpdates)
     else:
         tellUser("Not all pictures resized...", labelUpdates)
-###
-
-def showArrays(fig, array, numRows, numColumns):
-    for i in range(len(array)):
-        fig.add_subplot(numRows, numColumns, i+1)
-        plt.table(cellText=array[i], loc='center')
-        plt.axis('off') #Removes axes
-
-    plt.tight_layout()
-    plt.show()
-
-    tellUser("Changes displayed...", labelUpdates)
-###
-
-#------------------------------------------------------------------------------------Open Any Image Functions-------------------
-
-def openTheImage():
-    window.filename = openGUI("Select an Image to Open")
-    success = False
-    img = [[]]
-
-    if window.filename.endswith(".gif"):
-        success, img = getGIF(window.filename)
-    elif window.filename.endswith(".raw"):
-        success, img = getRAW(window.filename)
-    # elif ("binary" in window.filename):
-    #     success = displayBinary(window.filename)
-    else:
-        success, img = getImage(window.filename)
-
-    if (success):
-        tellUser("Image opened successfully", labelUpdates)
-
-        cv2.imshow(window.filename, img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows() #Upon Keypress, close window
-    else:
-        tellUser("Something went wrong... Unable to open", labelUpdates)
-###
-
-def getRAW(imgName):
-    tellUser("We will try do this for 512 X 512", labelUpdates)
-    print("We will try do this for 512 X 512")
-    try:
-        # open file in text format, 'rb' == binary format for reading
-        fd = open(imgName, 'rb') # BufferedReader Stream
-
-        # uint8 --> 8 bit image
-        # originalFile = np.fromfile(imgName, dtype=np.uint8)
-        # print("Shape:", originalFile.shape) # shows us shape
-
-        # TODO how flexibly discover this? For now, only worry about lena_gray.raw...
-        rows = 512
-        cols = 512
-
-        # construct array from data in binary file
-        f = np.fromfile(fd, dtype = np.uint8, count = rows * cols)
-        image = f.reshape((rows, cols)) # (rows, cols) == 1st parameter
-
-        # print(image) #Array containing values
-
-        fd.close()
-        return True, image
-
-    except Exception as uhoh:
-        print("New Error:", uhoh)
-        return False, NoneType
-###
-
-def getImage(imgName):
-    try:
-        image = cv2.imread(imgName)
-
-        return True, image
-    except Exception as uhoh:
-        print("New Error:", uhoh)
-        return False, NoneType
-###
-
-def getGIF(imgName):
-    vid_capture = cv2.VideoCapture(imgName)
-
-    if (vid_capture.isOpened() == False):
-        tellUser("Error opening the video file", labelUpdates)
-        return False, NoneType # need to return tuple
-    else:
-        fps = vid_capture.get(5)
-        # print('Frames per second : ', fps, 'FPS')
-
-        frameCount = vid_capture.get(7)
-        # print('Frame count : ', frame_count)
-
-    while(vid_capture.isOpened()):
-        readyToRead, frame = vid_capture.read()
-
-        if readyToRead:
-            # cv2.imshow(imgName, frame)
-            vid_capture.release()
-            cv2.destroyAllWindows()
-
-            return True, frame
-            
-    return False, NoneType # need to return tuple
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
