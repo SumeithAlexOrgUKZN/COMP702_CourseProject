@@ -14,15 +14,17 @@ Summary:
 
 # Tkinter is the GUI 
 import tkinter as tk
-from tkinter import Toplevel, Radiobutton, IntVar, Button, W, Label
+from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir
+from types import NoneType
 
 # library for image manipulation
 import cv2
 
 from matplotlib import pyplot as plt
+import numpy as np
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -86,10 +88,11 @@ def chooseExperimentMethod():
     )
     button3 = tk.Button(
         master = buttonFrameTop,
-        text = "3",
+        text = "Open an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = openTheImage
     )
     button4 = tk.Button(
         master = buttonFrameTop,
@@ -104,7 +107,6 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        command = chooseExperimentMethod
     )
     button6 = tk.Button(
         master = buttonFrameMiddle1,
@@ -126,7 +128,6 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        command = chooseExperimentMethod
     )
     button9 = tk.Button(
         master = buttonFrameMiddle2,
@@ -134,7 +135,6 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        command = chooseExperimentMethod
     )
     button10 = tk.Button(
         master = buttonFrameMiddle2,
@@ -156,7 +156,6 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        command = chooseExperimentMethod
     )
     button13 = tk.Button(
         master = buttonFrameBottom1,
@@ -164,7 +163,6 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        command = chooseExperimentMethod
     )
     button14 = tk.Button(
         master = buttonFrameBottom1,
@@ -355,6 +353,64 @@ def showArrays(fig, array, numRows, numColumns):
     tellUser("Changes displayed...", labelUpdates)
 ###
 
+#------------------------------------------------------------------------------------Open Any Image Functions-------------------
+
+def openTheImage():
+    window.filename = openGUI("Select an Image to Open")
+    success = False
+    img = [[]]
+
+    if window.filename.endswith(".gif"):
+        success, img = getGIF(window.filename)
+    elif window.filename.endswith(".raw"):
+        success, img = getRAW(window.filename)
+    # elif ("binary" in window.filename):
+    #     success = displayBinary(window.filename)
+    # else:
+    #     success = displayImage(window.filename)
+
+    if (success):
+        tellUser("Image opened successfully", labelUpdates)
+
+        cv2.imshow(window.filename, img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows() #Upon Keypress, close window
+    else:
+        tellUser("Something went wrong... Unable to open", labelUpdates)
+###
+
+def getRAW(imgName):
+    print("TODO")
+    return False, NoneType
+###
+
+
+def getGIF(imgName):
+    vid_capture = cv2.VideoCapture(imgName)
+
+    if (vid_capture.isOpened() == False):
+        tellUser("Error opening the video file", labelUpdates)
+        return False, NoneType # need to return tuple
+    else:
+        fps = vid_capture.get(5)
+        # print('Frames per second : ', fps, 'FPS')
+
+        frameCount = vid_capture.get(7)
+        # print('Frame count : ', frame_count)
+
+    while(vid_capture.isOpened()):
+        readyToRead, frame = vid_capture.read()
+
+        if readyToRead:
+            # cv2.imshow(imgName, frame)
+            vid_capture.release()
+            cv2.destroyAllWindows()
+
+            return True, frame
+            
+    return False, NoneType # need to return tuple
+###
+
 #------------------------------------------------------------------------------------Other Functions Below----------------------
 
 # places updated label for user
@@ -367,4 +423,18 @@ def tellUser(str, label):
     if (oldText == newText):
         newText += "(NEW)"
     label.config(text = newText) #global var
+###
+
+def openGUI(message):
+    currentDir = getcwd()
+    temp = filedialog.askopenfilename(initialdir=currentDir, title=message, 
+                                                    filetypes=(
+                                                        ("All Files", "*.*"), ("jpg Files", "*.jpg"), 
+                                                        ("png files", "*.png"), ("gif files", "*.gif"),
+                                                        ("tiff files", "*.tiff"), ("bmp files", "*.bmp"),
+                                                        ("raw files", "*.raw")
+                                                    )
+    )
+
+    return temp
 ###
