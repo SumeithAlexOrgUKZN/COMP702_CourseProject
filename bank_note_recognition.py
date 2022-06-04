@@ -38,7 +38,7 @@ label = tk.Label(
     master = frame, 
     text = "Welcome! Please choose a button below to begin",
     font = ("Helvetica", 14),
-    compound = 'top',
+    compound = 'bottom',
     image = photo,
     bg = "silver"
 )
