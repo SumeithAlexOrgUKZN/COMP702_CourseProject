@@ -114,10 +114,11 @@ def chooseExperimentMethod():
     )
     button6 = tk.Button(
         master = buttonFrameMiddle1,
-        text = "6",
+        text = "Enhance an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseEnhancement
     )
     button7 = tk.Button(
         master = buttonFrameMiddle1,
@@ -282,18 +283,6 @@ def getDataSetInfo(path):
 
     # notice 3 X 2D shape
     return [dataSetSizes, absoluteDimensions, totalPics]
-###
-
-def showArrays(fig, array, numRows, numColumns):
-    for i in range(len(array)):
-        fig.add_subplot(numRows, numColumns, i+1)
-        plt.table(cellText=array[i], loc='center')
-        plt.axis('off') #Removes axes
-
-    plt.tight_layout()
-    plt.show()
-
-    tellUser("Changes displayed...", labelUpdates)
 ###
 
 #------------------------------------------------------------------------------------Open Any Image Functions-------------------
@@ -609,8 +598,208 @@ def imgToGrayscale(name):
         return True, pic
     else:
         tellUser("Unable to get the Grayscale Image", labelUpdates)
+        return False, NoneType
+        
 ###
 
+#------------------------------------------------------------------------------------Enhancement Functions Below----------------
+
+def chooseEnhancement():
+    window.filename = openGUI("Select an Image to Enhance")
+    success, imgGrayscale = imgToGrayscale(window.filename)
+
+    if (success):
+        # Open new window to choose enhancement
+        choicesWindow = Toplevel(window)
+        choicesWindow.title("Image Enhancements Below")
+        choicesWindow.geometry("300x300")
+
+        enhanceOption = IntVar()
+        enhanceOption.set(0)
+        
+        Radiobutton(choicesWindow, text="Histogram Equalisation", variable=enhanceOption, value=1).pack(anchor=W)
+        Radiobutton(choicesWindow, text="Point Processing: Negative Image", variable=enhanceOption, value=2).pack(anchor=W)
+        Radiobutton(choicesWindow, text="Point Processing: Thresholding", variable=enhanceOption, value=3).pack(anchor=W)
+        Radiobutton(choicesWindow, text="Logarithmic Transformations", variable=enhanceOption, value=4).pack(anchor=W)
+        Radiobutton(choicesWindow, text="Power Law (Gamma) Transformations", variable=enhanceOption, value=5).pack(anchor=W)
+
+        Button(
+            choicesWindow, text="Enhance", width=35, bg='silver',
+            command=lambda: executeEnhancement(
+                                intVal=enhanceOption.get(), img=imgGrayscale, 
+                                imgName=window.filename
+                            ) 
+        ).pack()
+        # Button above sends the user elsewhere
+
+        Button(choicesWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
+        
+    else:
+        tellUser("Unable to Get Grayscale Image for Enhancement Window...", labelUpdates)
+###
+
+def executeEnhancement(intVal, img, imgName):
+    tellUser("Opening now...", labelUpdates)
+
+    # Lets us stick 5 plots in 1 window
+    fig = plt.figure(num="Enhancement", figsize=(15, 8))
+    plt.clf() # Should clear last plot but keep window open? 
+
+    fig.add_subplot(2, 3, 1)
+    message = "B/W JPG Image of: " + getFileName(imgName)
+    plt.imshow(img, cmap='gray')
+    plt.title(message, wrap=True)
+    plt.axis('off') #Removes axes
+    
+    fig.add_subplot(2, 3, 2)
+    message = "Histogram of B/W JPG of: " + getFileName(imgName)
+    displayHist(img, message)
+
+    if (intVal == 1):
+        histEqualization(img, imgName, fig)
+    elif (intVal == 2):
+        negImage(img, imgName, fig)
+    elif (intVal == 3):
+        thresholding(img, imgName, fig)
+    elif (intVal == 4):
+        logTransform(img, imgName, fig)
+    else:
+        textBoxWindow = Toplevel(window)
+        textBoxWindow.title("Image Enhancements Below")
+        textBoxWindow.geometry("300x300")
+
+        cLabel = Label(textBoxWindow, text="c = ...").pack() #used for reading instructions
+        cValue = tk.Entry(textBoxWindow)
+        cValue.insert(0, "1.0")
+        cValue.pack() #must be seperate for some reason...
+        gammaLabel = Label(textBoxWindow, text="gamma = ...").pack() #used for reading instructions
+        gammaValue = tk.Entry(textBoxWindow)
+        gammaValue.insert(0, "0.5")
+        gammaValue.pack() #must be seperate for some reason...
+
+        Button(textBoxWindow, text="Power Law (Gamma) Transformation", 
+                bg="silver", command=lambda: gammaTransform(img, imgName,
+                                                            float(cValue.get()), float(gammaValue.get()), fig)
+                                            ).pack()
+        Button(textBoxWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
+
+    # Because second panel needed for Gamma Transform, plt.show() appears in gammaTransformation()
+    if (intVal != 5):
+        plt.tight_layout() # Prevents title overlap in display
+        plt.show()       
+###
+
+
+def TransformationFunction(message, input, output):
+    plt.plot(input, output)
+    plt.title(message, wrap=True)
+    plt.xlabel('Input Intensity Values')
+    plt.ylabel('Output Intensity Values')
+###
+
+def gammaTransform(img, imgName, cValue, gammaValue, fig):
+    imageEnhanced = np.array(cValue*np.power(img,gammaValue))
+
+    fig.add_subplot(2, 3, 4)
+    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
+    displayHist(imageEnhanced, message)
+
+    fig.add_subplot(2, 3, 5)
+    message = "Gamma Transformation of Image: " + getFileName(imgName)
+    plt.imshow(imageEnhanced, cmap='gray') 
+    plt.title(message, wrap=True)
+    plt.axis('off') #Removes axes
+
+    fig.add_subplot(2, 3, 3)
+    message = "Transformation Function: "
+    TransformationFunction(message, img, imageEnhanced)
+
+    plt.tight_layout() # Prevents title overlap in display
+    plt.show()
+###
+
+def logTransform(img, imgName, fig):
+    cValue = 255 / np.log(1 + np.max(img))
+    imageEnhanced = cValue * np.log(1 + img) 
+    # imageEnhanced.reshape(512,512)
+
+    fig.add_subplot(2, 3, 4)
+    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
+    displayHist(imageEnhanced, message)
+
+    fig.add_subplot(2, 3, 5)
+    message = "Logarithmic Transformation of Image: " + getFileName(imgName)
+    plt.imshow(imageEnhanced, cmap='gray')
+    plt.title(message, wrap=True)
+    plt.axis('off') #Removes axes
+    
+    fig.add_subplot(2, 3, 3)
+    message = "Transformation Function: "
+    TransformationFunction(message, img, imageEnhanced)
+###
+
+def thresholding(img, imgName, fig):
+    imageEnhanced = cv2.adaptiveThreshold(src=img, maxValue=255, adaptiveMethod=cv2.BORDER_REPLICATE, thresholdType=cv2.THRESH_BINARY,blockSize=3, C=10)
+    
+    fig.add_subplot(2, 3, 4)
+    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
+    displayHist(imageEnhanced, message)
+
+    fig.add_subplot(2, 3, 5)
+    message = "Thresholding of Image: " + getFileName(imgName)
+    plt.imshow(imageEnhanced, cmap='gray')
+    plt.title(message, wrap=True)
+    plt.axis('off') #Removes axes
+    
+    fig.add_subplot(2, 3, 3)
+    message = "Transformation Function: "
+    TransformationFunction(message, img, imageEnhanced)
+###
+
+def negImage(img, imgName, fig):
+    imageEnhanced = cv2.bitwise_not(img)
+    
+    fig.add_subplot(2, 3, 4)
+    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
+    displayHist(imageEnhanced, message)
+
+    
+    fig.add_subplot(2, 3, 5)
+    message = "Negative Image of: " + getFileName(imgName)
+    plt.imshow(imageEnhanced, cmap='gray')
+    plt.title(message, wrap=True)
+    plt.axis('off') #Removes axes
+    
+    fig.add_subplot(2, 3, 3)
+    message = "Transformation Function: "
+    TransformationFunction(message, img, imageEnhanced)
+###
+
+def histEqualization(img, imgName, fig):    
+    imgEnhanced = cv2.equalizeHist(img)
+
+    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
+    fig.add_subplot(2, 3, 4)
+    displayHist(imgEnhanced, message)
+    
+    message = "Histogram Equalized Image of: " + getFileName(imgName)
+    fig.add_subplot(2, 3, 5)
+    plt.imshow(imgEnhanced, cmap='gray')
+    plt.title(message, wrap=True)
+    plt.axis('off') #Removes axes
+
+    message = "Transformation Function: "
+    fig.add_subplot(2, 3, 3)
+    TransformationFunction(message, img, imgEnhanced)
+###
+
+# bins are qty of histogram pieces, range is for width of graph
+def displayHist(img, str):
+    plt.title(str, wrap=True)
+    plt.hist(img.ravel(), bins=256, range=[0,256])
+    plt.xlabel('Gray Levels')
+    plt.ylabel('Frequencies')
+###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
 
@@ -643,4 +832,30 @@ def openGUI(message):
 def getFileName(path):
     backslashLocation = path.rfind("/")
     return path[ backslashLocation + 1 : ]
+###
+
+def showArrays(fig, array, numRows, numColumns):
+    for i in range(len(array)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.table(cellText=array[i], loc='center')
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    plt.show()
+
+    tellUser("Changes displayed...", labelUpdates)
+###
+
+# allows for any number of images to be placed in a grid
+def plotImagesSideBySide(fig, imgArray, labelArray, numRows, numColumns):
+    for i in range(len(imgArray)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.imshow(imgArray[i]) # , cmap='gray' removed
+        plt.title(labelArray[i], wrap=True)
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    plt.show()
+
+    tellUser("Changes displayed...", labelUpdates)
 ###
