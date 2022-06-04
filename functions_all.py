@@ -480,29 +480,30 @@ def bulkResize(x, y):
     # print("Inside bulkResize()")
 
     currentDir = getcwd()
-    folder = "\\Notes_DataSet"
-    path = walk(currentDir + folder)
+    folder = "Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
     destinationFolder = currentDir + "\\Resized_Notes_DataSet"
 
-    # create directory
-    try:
-        mkdir(destinationFolder)
-    except FileExistsError as uhoh:
-        pass
-    except Exception as uhoh:
-        print("New Error:", uhoh)
-        pass
+    # # create directory
+    # try:
+    #     mkdir(destinationFolder)Resized_
+    # except FileExistsError as uhoh:
+    #     pass
+    # except Exception as uhoh:
+    #     print("New Error:", uhoh)
+    #     pass
     
     count1 = 0
     for root, directories, files in path:
         for file in files:
             count1 += 1
 
-            temp = currentDir + folder + "\\" + file
+            temp = currentDir + "\\" + folder + "\\" + file
             image = cv2.imread(temp, cv2.IMREAD_UNCHANGED)
 
             resizedImage = cv2.resize(image, (y, x)) # note order
-            cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
+            # cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
+            success = saveFile(folder="Resized_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="Resized_", image=resizedImage)
 
     path = walk(destinationFolder)
     count2 = 0
@@ -556,7 +557,7 @@ def executeConversion(intVal, show):
             else:
                 aString = "Binary_"
             
-            aString += getFileName(window.filename)
+            # aString += getFileName(window.filename)
 
             # create directory
             destinationFolder = "Converted_Notes_DataSet"
@@ -568,7 +569,10 @@ def executeConversion(intVal, show):
                 print("New Error:", uhoh)
                 pass
             
-            writtenSuccessfully = cv2.imwrite(destinationFolder + "\\" + aString, img)
+            # writtenSuccessfully = cv2.imwrite(destinationFolder + "\\" + aString, img)
+            print(window.filename)
+            writtenSuccessfully = saveFile(folder=destinationFolder , imgPath=window.filename, imgNameToAppend=aString, image=img)
+            
             if (writtenSuccessfully):
                 tellUser("Conversion successful!", labelUpdates)
             else:
@@ -2140,6 +2144,8 @@ def openGUI(message):
 
 def getFileName(path):
     backslashLocation = path.rfind("/")
+    if (backslashLocation == -1):
+        backslashLocation = path.rfind("\\")
     return path[ backslashLocation + 1 : ]
 ###
 
@@ -2167,4 +2173,27 @@ def plotImagesSideBySide(fig, imgArray, labelArray, numRows, numColumns):
     plt.show()
 
     tellUser("Changes displayed...", labelUpdates)
+###
+
+def saveFile(folder, imgPath, imgNameToAppend, image):
+
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + folder
+
+     # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+    
+    location = destinationFolder + "\\" + imgNameToAppend + getFileName(imgPath)
+
+    # all converted images need to be jpg (incase .raw / .gif come up - for consistency)
+    location = location[ : -4] + ".jpg"
+
+    success = cv2.imwrite(location, image) # True or False
+    return success
 ###
