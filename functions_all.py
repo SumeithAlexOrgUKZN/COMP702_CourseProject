@@ -63,8 +63,10 @@ def chooseExperimentMethod():
 
     experimentFrame = tk.Frame(experimentWindow)
     buttonFrameTop = tk.Frame(experimentWindow)
-    buttonFrameMiddle = tk.Frame(experimentWindow)
-    buttonFrameBottom = tk.Frame(experimentWindow)
+    buttonFrameMiddle1 = tk.Frame(experimentWindow)
+    buttonFrameMiddle2 = tk.Frame(experimentWindow)
+    buttonFrameBottom1 = tk.Frame(experimentWindow)
+    buttonFrameBottom2 = tk.Frame(experimentWindow)
 
     button1 = tk.Button(
         master = buttonFrameTop,
@@ -90,14 +92,14 @@ def chooseExperimentMethod():
         bg = "silver",
     )
     button4 = tk.Button(
-        master = buttonFrameMiddle,
+        master = buttonFrameTop,
         text = "4",
         width = 40,
         height = 5, 
         bg = "silver",
     )
     button5 = tk.Button(
-        master = buttonFrameMiddle,
+        master = buttonFrameMiddle1,
         text = "5",
         width = 40,
         height = 5, 
@@ -105,29 +107,95 @@ def chooseExperimentMethod():
         command = chooseExperimentMethod
     )
     button6 = tk.Button(
-        master = buttonFrameMiddle,
+        master = buttonFrameMiddle1,
         text = "6",
         width = 40,
         height = 5, 
         bg = "silver",
     )
     button7 = tk.Button(
-        master = buttonFrameBottom,
+        master = buttonFrameMiddle1,
         text = "7",
         width = 40,
         height = 5, 
         bg = "silver",
     )
     button8 = tk.Button(
-        master = buttonFrameBottom,
+        master = buttonFrameMiddle1,
         text = "8",
         width = 40,
         height = 5, 
         bg = "silver",
         command = chooseExperimentMethod
     )
+    button9 = tk.Button(
+        master = buttonFrameMiddle2,
+        text = "9",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+        command = chooseExperimentMethod
+    )
+    button10 = tk.Button(
+        master = buttonFrameMiddle2,
+        text = "10",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
+    button11 = tk.Button(
+        master = buttonFrameMiddle2,
+        text = "11",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
+    button12 = tk.Button(
+        master = buttonFrameMiddle2,
+        text = "12",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+        command = chooseExperimentMethod
+    )
+    button13 = tk.Button(
+        master = buttonFrameBottom1,
+        text = "13",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+        command = chooseExperimentMethod
+    )
+    button14 = tk.Button(
+        master = buttonFrameBottom1,
+        text = "14",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
+    button15 = tk.Button(
+        master = buttonFrameBottom1,
+        text = "15",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
+    button16 = tk.Button(
+        master = buttonFrameBottom1,
+        text = "16",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
+    button17 = tk.Button(
+        master = buttonFrameBottom2,
+        text = "17",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
     buttonClose = tk.Button(
-        master = buttonFrameBottom,
+        master = buttonFrameBottom2,
         text = "Exit the Program",
         width = 40,
         height = 5, 
@@ -136,11 +204,13 @@ def chooseExperimentMethod():
     )
 
     experimentFrame.pack()
-    buttonFrameTop.pack(); buttonFrameMiddle.pack(); buttonFrameBottom.pack()
+    buttonFrameTop.pack(); buttonFrameMiddle1.pack(); buttonFrameMiddle2.pack(); buttonFrameBottom1.pack(); buttonFrameBottom2.pack()
 
-    button1.pack(side = tk.LEFT); button2.pack(side = tk.LEFT); button3.pack(side = tk.RIGHT)
-    button4.pack(side = tk.LEFT); button5.pack(side = tk.LEFT); button6.pack(side = tk.RIGHT)
-    button7.pack(side = tk.LEFT); button8.pack(side = tk.LEFT); buttonClose.pack(side = tk.RIGHT)
+    button1.pack(side = tk.LEFT); button2.pack(side = tk.LEFT); button3.pack(side = tk.LEFT); button4.pack(side = tk.RIGHT)
+    button5.pack(side = tk.LEFT); button6.pack(side = tk.LEFT); button7.pack(side = tk.LEFT); button8.pack(side = tk.RIGHT)
+    button9.pack(side = tk.LEFT); button10.pack(side = tk.LEFT); button11.pack(side = tk.LEFT); button12.pack(side = tk.RIGHT)
+    button13.pack(side = tk.LEFT); button14.pack(side = tk.LEFT); button15.pack(side = tk.LEFT); button16.pack(side = tk.RIGHT)
+    button17.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
 ###
 
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
