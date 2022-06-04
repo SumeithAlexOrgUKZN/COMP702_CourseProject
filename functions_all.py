@@ -78,7 +78,7 @@ def chooseExperimentMethod():
     )
     button2= tk.Button(
         master = buttonFrameTop,
-        text = "Bulk Resize",
+        text = "Bulk Changes (Resize)",
         width = 40,
         height = 5, 
         bg = "silver",
