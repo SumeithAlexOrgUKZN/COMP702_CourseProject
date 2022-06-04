@@ -138,10 +138,11 @@ def chooseExperimentMethod():
     )
     button9 = tk.Button(
         master = buttonFrameMiddle2,
-        text = "9",
+        text = "Morphologically Change an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseMorphology
     )
     button10 = tk.Button(
         master = buttonFrameMiddle2,
@@ -567,7 +568,6 @@ def executeConversion(intVal, show):
 ###
 
 def imgToBinary(name):
-
     success = False
     img = [[]]
 
@@ -580,8 +580,10 @@ def imgToBinary(name):
             return True, binaryImage
         else:
             tellUser("Unable to get the Binary Image", labelUpdates)
+            return False, NoneType
     else:
         tellUser("Unable to get the Grayscale Image", labelUpdates)
+        return False, NoneType
     
 ###
 
@@ -955,6 +957,152 @@ def executeSharpening(imgGrayscale, imgName, fig):
 
     plt.tight_layout() # Prevents title overlap in display
     plt.show()
+###
+
+#------------------------------------------------------------------------------------Morphological Functions Below--------------
+
+def chooseMorphology():
+    window.filename = openGUI("Select an Image to Smooth")
+    success, imgBinary = imgToBinary(window.filename)
+
+    if (success):
+        # Open new window to choose enhancement
+        morphWindow = Toplevel(window)
+        morphWindow.title("Choose an option...")
+        morphWindow.geometry("300x300")
+
+        enhanceOption = IntVar()
+        enhanceOption.set(0)
+        
+        Radiobutton(morphWindow, text="Dilation", variable=enhanceOption, value=1).pack(anchor=W)
+        Radiobutton(morphWindow, text="Erosion", variable=enhanceOption, value=2).pack(anchor=W)
+        Radiobutton(morphWindow, text="Opening", variable=enhanceOption, value=3).pack(anchor=W)
+        Radiobutton(morphWindow, text="Closing", variable=enhanceOption, value=4).pack(anchor=W)
+        Radiobutton(morphWindow, text="Boundary Extraction", variable=enhanceOption, value=5).pack(anchor=W)
+        # Radiobutton(smoothingWindow, text="Power Law (Gamma) Transformations", variable=enhanceOption, value=5).pack(anchor=W)
+
+        Button(morphWindow, text="Morph", width=35, bg='gray',
+            command=lambda: executeMorphOption(intVal=enhanceOption.get(), binaryArray=imgBinary, imgName=window.filename) 
+        ).pack()
+        Button(morphWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
+        
+    else:
+        tellUser("Unable to Get Grayscale Image for Morphological Window...", labelUpdates)
+    return True
+###
+
+def executeMorphOption(intVal, binaryArray, imgName):
+    fig = plt.figure(num="Morphological Changes", figsize=(8, 4))
+    plt.clf() # Should clear last plot but keep window open? 
+
+    fig.add_subplot(1, 2, 1)
+
+    plt.imshow(binaryArray, cmap='gray')
+    plt.title('Binary Image of '+ getFileName(imgName), wrap=True)
+
+    fig.add_subplot(1, 2, 2)
+
+    if (intVal == 1):
+        dilatedArray = executeDilation(array=binaryArray)
+        
+        plt.imshow(dilatedArray, cmap='gray')
+        plt.title('Dilated Binary Image of '+ getFileName(imgName), wrap=True)
+    elif (intVal == 2):
+        dilatedArray = executeErosion(array=binaryArray)
+        
+        plt.imshow(dilatedArray, cmap='gray')
+        plt.title('Eroded Binary Image of '+ getFileName(imgName), wrap=True)
+    elif (intVal == 3):
+        dilatedArray = executeOpening(array=binaryArray)
+        
+        plt.imshow(dilatedArray, cmap='gray')
+        plt.title('Opening Binary Image of '+ getFileName(imgName), wrap=True)
+    elif (intVal == 4):
+        dilatedArray = executeClosing(array=binaryArray)
+        
+        plt.imshow(dilatedArray, cmap='gray')
+        plt.title('Closing Binary Image of '+ getFileName(imgName), wrap=True)
+    else:
+        dilatedArray = executeBoundaryExtraction(array=binaryArray)
+        
+        plt.imshow(dilatedArray, cmap='gray')
+        plt.title('Boundary of Binary Image of '+ getFileName(imgName), wrap=True)
+
+    plt.show()
+###
+
+# here, we get boundary of an image
+def executeBoundaryExtraction(array):
+    erodedArray = executeErosion(array)
+    
+    (x, y) = (array.shape)
+
+    newArray = np.array( [[0 for i in range(y)] for j in range(x)] )
+    
+    for i in range(x):
+        for j in range(y):
+            temp = array[i][j] - erodedArray[i][j]
+
+            if (temp >= 0):
+                newArray[i][j] = temp
+
+    return newArray
+###
+
+# here, we close an image
+def executeClosing(array):
+    dilatedArray = executeDilation(array)
+    closedArray = executeErosion(dilatedArray)
+    return closedArray
+###
+
+# here, we open an image
+def executeOpening(array):
+    erodedArray = executeErosion(array)
+    openedArray = executeDilation(erodedArray)
+    return openedArray
+###
+
+# here, we erode an image
+def executeErosion(array):
+    # pattern used in for loop, this is here for reference
+    # structuringElement =   [ [0, 1, 0],
+    #                          [1, 1, 1],
+    #                          [0, 1, 0] ]
+
+    paddedArray = np.pad(array, (1, 1), 'constant', constant_values=(0, 0))
+    (x, y) = (paddedArray.shape)
+
+    # This will be dilated - slice later
+    newArray = np.array( [[0 for i in range(y)] for j in range(x)] )
+
+    for i in range(1, x-1):
+        for j in range(1, y-1):
+            if (paddedArray[i-1][j] == 255) and (paddedArray[i][j-1] == 255) and (paddedArray[i][j+1] == 255) and (paddedArray[i+1][j] == 255):
+                newArray[i][j] = 255
+
+    return newArray[ 1 : x , 1 : y ] # slice and return
+###
+
+# here, we dilate an image
+def executeDilation(array):
+    # pattern used in for loop, this is here for reference
+    # structuringElement =   [ [0, 1, 0],
+    #                          [1, 1, 1],
+    #                          [0, 1, 0] ]
+
+    paddedArray = np.pad(array, (1, 1), 'constant', constant_values=(0, 0))
+    (x, y) = (paddedArray.shape)
+
+    # This will be dilated - slice later
+    newArray = np.array( [[0 for i in range(y)] for j in range(x)] )
+
+    for i in range(1, x-1):
+        for j in range(1, y-1):
+            if (paddedArray[i-1][j] == 255) or (paddedArray[i][j-1] == 255) or (paddedArray[i][j+1] == 255) or (paddedArray[i+1][j] == 255):
+                newArray[i][j] = 255
+
+    return newArray[ 1 : x , 1 : y ] # slice and return
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
