@@ -2323,7 +2323,7 @@ def executeImageTransformationChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Transformed_Individual_Images"
-            newMessage = "DCT_"
+            newMessage = "DCT_Transformed_"
             success = saveFile(destinationFolder, imgName, newMessage, idct_img)   
             if (success):
                 tellUser("First Image Saved successfully", labelUpdates)
@@ -2354,8 +2354,11 @@ def chooseCompression():
 
         Radiobutton(compressionWindow, text="Apply DCT Compression", variable=compressOption, value=1, width=30).pack(anchor=W, side="top")
 
-        Button(compressionWindow, text="Choose Compresion Option", width=50, bg='gray',
-            command=lambda: executeCompressionChoice(intVal=compressOption.get(), img=imgGrayscale, imgName=window.filename)
+        Button(compressionWindow, text="Choose Compresion Option and Show", width=50, bg='gray',
+            command=lambda: executeCompressionChoice(intVal=compressOption.get(), img=imgGrayscale, imgName=window.filename, show=True)
+        ).pack(anchor=W, side="top")
+        Button(compressionWindow, text="Choose Compresion Option and Save", width=50, bg='gray',
+            command=lambda: executeCompressionChoice(intVal=compressOption.get(), img=imgGrayscale, imgName=window.filename, show=False)
         ).pack(anchor=W, side="top")
         Button(compressionWindow, text="Close Plots", width=50, bg='gray',
             command=lambda: ( plt.close("Compression Changes") )
@@ -2366,7 +2369,7 @@ def chooseCompression():
 
 
 
-def executeCompressionChoice(intVal, img, imgName):
+def executeCompressionChoice(intVal, img, imgName, show):
     # print("Inside executeCompressionOption()")
 
     fig = plt.figure(num="Compression Changes", figsize=(8, 4))
@@ -2402,12 +2405,22 @@ def executeCompressionChoice(intVal, img, imgName):
             for j in r_[:imgsize[1]:8]:
                 img_idct[i:(i+8),j:(j+8)] = idct2( dct_thresh[i:(i+8),j:(j+8)] )
 
-        numRows = 2
-        numColumns = 3
-        modifiedImageArray = [img, dct, img_slice, dct_slice, dct_thresh, img_idct]
-        labelArray = ["Original Image", "DCT Image", "An 8X8 Image block", "An 8X8 DCT Block", "DCT Thresholding", "Using DCT to compress"]
+        if (show):
+            numRows = 2
+            numColumns = 3
+            modifiedImageArray = [img, dct, img_slice, dct_slice, dct_thresh, img_idct]
+            labelArray = ["Original Image", "DCT Image", "An 8X8 Image block", "An 8X8 DCT Block", "DCT Thresholding", "Using DCT to compress"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Compressed_Individual_Images"
+            newMessage = "DCT_Compressed_"
+            success = saveFile(destinationFolder, imgName, newMessage, img_idct)   
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     else:
         # should never execute
