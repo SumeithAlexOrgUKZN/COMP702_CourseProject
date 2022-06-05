@@ -963,20 +963,23 @@ def chooseSharpening():
     success, imgGrayscale = imgToGrayscale(window.filename)
 
     if (success):
-        # Open new window to choose enhancement
-        # sharpenWindow = Toplevel(window)
-        # sharpenWindow.title("Image Sharpened Below")
-        # sharpenWindow.geometry("300x300")
-
         figure = plt.figure(num="Sharpening", figsize=(10, 5))
 
-        executeSharpening(imgGrayscale, imgName=window.filename, fig=figure) 
-        
+        sharpeningWindow = Toplevel(window)
+        sharpeningWindow.title("Image Enhancements Below")
+        sharpeningWindow.geometry("300x300")
+
+        Button(sharpeningWindow, text="Sharpen and Show", 
+                bg="silver", command=lambda: executeSharpening(imgGrayscale, imgName=window.filename, fig=figure, show = True) 
+        ).pack()
+        Button(sharpeningWindow, text="Sharpen and Save", 
+                bg="silver", command=lambda: executeSharpening(imgGrayscale, imgName=window.filename, fig=figure, show = False) 
+        ).pack()        
     else:
         tellUser("Unable to Get Grayscale Image for Sharpening Window...", labelUpdates)
 ###
 
-def executeSharpening(imgGrayscale, imgName, fig):
+def executeSharpening(imgGrayscale, imgName, fig, show):
     # This filter is enough!
     # kernel = np.array([ [0, -1, 0], 
     #                     [-1, 5, -1], 
@@ -987,23 +990,32 @@ def executeSharpening(imgGrayscale, imgName, fig):
     edgesOnly = imgGrayscale - blur
     sharpenedImage = imgGrayscale + edgesOnly
 
-    fig.add_subplot(1, 3, 1)
-    plt.imshow(imgGrayscale, cmap='gray')
-    plt.title('B\W Image of: '+ getFileName(imgName), wrap=True)
-    plt.axis('off')
+    if (show):
+        fig.add_subplot(1, 3, 1)
+        plt.imshow(imgGrayscale, cmap='gray')
+        plt.title('B\W Image of: '+ getFileName(imgName), wrap=True)
+        plt.axis('off')
 
-    fig.add_subplot(1, 3, 2)
-    plt.imshow(edgesOnly, cmap='gray')
-    plt.title('Edges of: '+ getFileName(imgName), wrap=True)
-    plt.axis('off')
+        fig.add_subplot(1, 3, 2)
+        plt.imshow(edgesOnly, cmap='gray')
+        plt.title('Edges of: '+ getFileName(imgName), wrap=True)
+        plt.axis('off')
 
-    fig.add_subplot(1, 3, 3)
-    plt.imshow(sharpenedImage, cmap='gray')
-    plt.title('Sharpened Image of: '+ getFileName(imgName), wrap=True)
-    plt.axis('off')
+        fig.add_subplot(1, 3, 3)
+        plt.imshow(sharpenedImage, cmap='gray')
+        plt.title('Sharpened Image of: '+ getFileName(imgName), wrap=True)
+        plt.axis('off')
 
-    plt.tight_layout() # Prevents title overlap in display
-    plt.show()
+        plt.tight_layout() # Prevents title overlap in display
+        plt.show()
+    else:
+        # save image
+        destinationFolder = "Sharpened_Individual_Images"
+        success = saveFile(destinationFolder, imgName, "Sharpened_", sharpenedImage)   
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
 ###
 
 #------------------------------------------------------------------------------------Morphological Functions Below--------------
