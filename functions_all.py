@@ -408,12 +408,12 @@ def resizeTheImage():
     success, img = getImage(window.filename)
 
     if (success):
-        conductIndividualResize(img)
+        conductIndividualResize(img, window.filename)
     else:
-        tellUser("Something went wrong... Unable to resize", labelUpdates)
+        tellUser("Something went wrong... Unable to get the Image", labelUpdates)
 ###
 
-def conductIndividualResize(image):
+def conductIndividualResize(image, imgName):
     resizeWindow = Toplevel(window)
     resizeWindow.title("Please enter some values")
     resizeWindow.geometry("300x300")
@@ -429,30 +429,29 @@ def conductIndividualResize(image):
     yValue.pack() #must be seperate for some reason...
 
     Button(resizeWindow, text="Do Individual Resize", width=50, bg='gray',
-        command=lambda: individualResize(x=int( xValue.get() ), y=int( yValue.get() ), img = image)
+        command=lambda: individualResize(x=int( xValue.get() ), y=int( yValue.get() ), img = image, imgName=imgName, savePic = False)
+    ).pack(anchor=W, side="top")
+    Button(resizeWindow, text="Save Individual Resize", width=50, bg='gray',
+        command=lambda: individualResize(x=int( xValue.get() ), y=int( yValue.get() ), img = image, imgName=imgName, savePic = True)
     ).pack(anchor=W, side="top")
 ###
 
-def individualResize(x, y, img):
+def individualResize(x, y, img, imgName, savePic):
     # print("Inside individualResize()")
 
-    currentDir = getcwd()
-    folder = "\\Notes_DataSet"
-    path = walk(currentDir + folder)
-    destinationFolder = currentDir + "\\Resized_Notes_DataSet"
-
-    # create directory
-    try:
-        mkdir(destinationFolder)
-    except FileExistsError as uhoh:
-        pass
-    except Exception as uhoh:
-        print("New Error:", uhoh)
-        pass
-
     resizedImage = cv2.resize(img, (y, x)) # note order
-    aString = "Resized to (" + str(x) + "," + str(y) + ")"
-    cv2.imshow(aString, resizedImage)
+
+    if (not savePic):
+        aString = "Resized to (" + str(x) + "," + str(y) + ")"
+        cv2.imshow(aString, resizedImage)
+    else:
+        folder = "Resized_Individual_Pictures"
+
+        success = saveFile(folder, imgName, "Resized_", resizedImage)
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
 ###
 
 def conductBulkResize():
@@ -484,15 +483,6 @@ def bulkResize(x, y):
     path = walk(currentDir + "\\" + folder)
     destinationFolder = currentDir + "\\Resized_Notes_DataSet"
 
-    # # create directory
-    # try:
-    #     mkdir(destinationFolder)Resized_
-    # except FileExistsError as uhoh:
-    #     pass
-    # except Exception as uhoh:
-    #     print("New Error:", uhoh)
-    #     pass
-    
     count1 = 0
     for root, directories, files in path:
         for file in files:
