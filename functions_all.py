@@ -14,6 +14,7 @@ Summary:
 
 # Tkinter is the GUI 
 from cProfile import label
+from inspect import getfile
 import tkinter as tk
 from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 
@@ -632,10 +633,17 @@ def chooseEnhancement():
         Radiobutton(choicesWindow, text="Power Law (Gamma) Transformations", variable=enhanceOption, value=5).pack(anchor=W)
 
         Button(
-            choicesWindow, text="Enhance", width=35, bg='silver',
+            choicesWindow, text="Enhance and Show", width=35, bg='silver',
             command=lambda: executeEnhancement(
                                 intVal=enhanceOption.get(), img=imgGrayscale, 
-                                imgName=window.filename
+                                imgName=window.filename, show = True
+                            ) 
+        ).pack()
+        Button(
+            choicesWindow, text="Enhance and Save", width=35, bg='silver',
+            command=lambda: executeEnhancement(
+                                intVal=enhanceOption.get(), img=imgGrayscale, 
+                                imgName=window.filename, show=False
                             ) 
         ).pack()
         # Button above sends the user elsewhere
@@ -646,31 +654,35 @@ def chooseEnhancement():
         tellUser("Unable to Get Grayscale Image for Enhancement Window...", labelUpdates)
 ###
 
-def executeEnhancement(intVal, img, imgName):
-    tellUser("Opening now...", labelUpdates)
+def executeEnhancement(intVal, img, imgName, show):
+    newImg = [[]]
+    newMessage = ""
 
     # Lets us stick 5 plots in 1 window
     fig = plt.figure(num="Enhancement", figsize=(15, 8))
     plt.clf() # Should clear last plot but keep window open? 
 
-    fig.add_subplot(2, 3, 1)
-    message = "B/W JPG Image of: " + getFileName(imgName)
-    plt.imshow(img, cmap='gray')
-    plt.title(message, wrap=True)
-    plt.axis('off') #Removes axes
-    
-    fig.add_subplot(2, 3, 2)
-    message = "Histogram of B/W JPG of: " + getFileName(imgName)
-    displayHist(img, message)
-
+    # get the changed image, later on plot it
     if (intVal == 1):
-        histEqualization(img, imgName, fig)
+        # 2 variables here used after this loop
+        newImg = histEqualization(img)
+        newMessage = "Histogram_Equalized_"
+
     elif (intVal == 2):
-        negImage(img, imgName, fig)
+        # 2 variables here used after this loop
+        newImg = negImage(img)
+        newMessage = "Negative_"
+
     elif (intVal == 3):
-        thresholding(img, imgName, fig)
+        # 2 variables here used after this loop
+        newImg = thresholding(img)
+        newMessage = "Thresholded_"
+
     elif (intVal == 4):
-        logTransform(img, imgName, fig)
+        # 2 variables here used after this loop
+        newImg = logTransform(img)
+        newMessage = "Logarithmic_Transformation_"
+
     else:
         textBoxWindow = Toplevel(window)
         textBoxWindow.title("Image Enhancements Below")
@@ -687,14 +699,51 @@ def executeEnhancement(intVal, img, imgName):
 
         Button(textBoxWindow, text="Power Law (Gamma) Transformation", 
                 bg="silver", command=lambda: gammaTransform(img, imgName,
-                                                            float(cValue.get()), float(gammaValue.get()), fig)
+                                                            float(cValue.get()), float(gammaValue.get()), fig, show = show)
                                             ).pack()
         Button(textBoxWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
 
     # Because second panel needed for Gamma Transform, plt.show() appears in gammaTransformation()
     if (intVal != 5):
-        plt.tight_layout() # Prevents title overlap in display
-        plt.show()       
+        if (show):
+            tellUser("Opening now...", labelUpdates)
+
+            fig.add_subplot(2, 3, 1)
+            message = "B/W JPG Image of: " + getFileName(imgName)
+            plt.imshow(img, cmap='gray')
+            plt.title(message, wrap=True)
+            plt.axis('off') #Removes axes
+            
+            fig.add_subplot(2, 3, 2)
+            message = "Histogram of B/W JPG of: " + getFileName(imgName)
+            displayHist(img, message)
+
+            message = "Transformation Function: "
+            fig.add_subplot(2, 3, 3)
+            TransformationFunction(message, img, newImg)
+
+            message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
+            fig.add_subplot(2, 3, 4)
+            displayHist(newImg, message)
+            
+            # updated higher up
+            message = newMessage +  "of_" + getFileName(imgName)
+            fig.add_subplot(2, 3, 5)
+            plt.imshow(newImg, cmap='gray')
+            plt.title(message, wrap=True)
+            plt.axis('off') #Removes axes
+
+            plt.tight_layout() # Prevents title overlap in display
+            plt.show()
+        else:
+            # save image
+            destinationFolder = "Enhanced_Individual_Images"
+            success = saveFile(destinationFolder, imgName, newMessage, newImg)  
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
+             
 ###
 
 
@@ -705,100 +754,70 @@ def TransformationFunction(message, input, output):
     plt.ylabel('Output Intensity Values')
 ###
 
-def gammaTransform(img, imgName, cValue, gammaValue, fig):
+def gammaTransform(img, imgName, cValue, gammaValue, fig, show):
     imageEnhanced = np.array(cValue*np.power(img,gammaValue))
+    newMessage = "Gamma_Transformation_"
 
-    fig.add_subplot(2, 3, 4)
-    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
-    displayHist(imageEnhanced, message)
+    if (show):
+        fig.add_subplot(2, 3, 1)
+        message = "B/W JPG Image of: " + getFileName(imgName)
+        plt.imshow(img, cmap='gray')
+        plt.title(message, wrap=True)
+        plt.axis('off') #Removes axes
+        
+        fig.add_subplot(2, 3, 2)
+        message = "Histogram of B/W JPG of: " + getFileName(imgName)
+        displayHist(img, message)
 
-    fig.add_subplot(2, 3, 5)
-    message = "Gamma Transformation of Image: " + getFileName(imgName)
-    plt.imshow(imageEnhanced, cmap='gray') 
-    plt.title(message, wrap=True)
-    plt.axis('off') #Removes axes
+        fig.add_subplot(2, 3, 3)
+        message = "Transformation Function: "
+        TransformationFunction(message, img, imageEnhanced)
 
-    fig.add_subplot(2, 3, 3)
-    message = "Transformation Function: "
-    TransformationFunction(message, img, imageEnhanced)
+        fig.add_subplot(2, 3, 4)
+        message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
+        displayHist(imageEnhanced, message)
 
-    plt.tight_layout() # Prevents title overlap in display
-    plt.show()
+        fig.add_subplot(2, 3, 5)
+        message = newMessage + "of_" + getFileName(imgName)
+        plt.imshow(imageEnhanced, cmap='gray') 
+        plt.title(message, wrap=True)
+        plt.axis('off') #Removes axes
+
+        plt.tight_layout() # Prevents title overlap in display
+        plt.show()
+    else:
+            # save image
+            destinationFolder = "Enhanced_Individual_Images"
+            success = saveFile(destinationFolder, imgName, newMessage, imageEnhanced)   
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 ###
 
-def logTransform(img, imgName, fig):
+def logTransform(img):
     cValue = 255 / np.log(1 + np.max(img))
     imageEnhanced = cValue * np.log(1 + img) 
-    # imageEnhanced.reshape(512,512)
-
-    fig.add_subplot(2, 3, 4)
-    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
-    displayHist(imageEnhanced, message)
-
-    fig.add_subplot(2, 3, 5)
-    message = "Logarithmic Transformation of Image: " + getFileName(imgName)
-    plt.imshow(imageEnhanced, cmap='gray')
-    plt.title(message, wrap=True)
-    plt.axis('off') #Removes axes
     
-    fig.add_subplot(2, 3, 3)
-    message = "Transformation Function: "
-    TransformationFunction(message, img, imageEnhanced)
+    return imageEnhanced
 ###
 
-def thresholding(img, imgName, fig):
+def thresholding(img):
     imageEnhanced = cv2.adaptiveThreshold(src=img, maxValue=255, adaptiveMethod=cv2.BORDER_REPLICATE, thresholdType=cv2.THRESH_BINARY,blockSize=3, C=10)
-    
-    fig.add_subplot(2, 3, 4)
-    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
-    displayHist(imageEnhanced, message)
 
-    fig.add_subplot(2, 3, 5)
-    message = "Thresholding of Image: " + getFileName(imgName)
-    plt.imshow(imageEnhanced, cmap='gray')
-    plt.title(message, wrap=True)
-    plt.axis('off') #Removes axes
-    
-    fig.add_subplot(2, 3, 3)
-    message = "Transformation Function: "
-    TransformationFunction(message, img, imageEnhanced)
+    return imageEnhanced
 ###
 
-def negImage(img, imgName, fig):
+def negImage(img):
     imageEnhanced = cv2.bitwise_not(img)
-    
-    fig.add_subplot(2, 3, 4)
-    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
-    displayHist(imageEnhanced, message)
 
-    
-    fig.add_subplot(2, 3, 5)
-    message = "Negative Image of: " + getFileName(imgName)
-    plt.imshow(imageEnhanced, cmap='gray')
-    plt.title(message, wrap=True)
-    plt.axis('off') #Removes axes
-    
-    fig.add_subplot(2, 3, 3)
-    message = "Transformation Function: "
-    TransformationFunction(message, img, imageEnhanced)
+    return imageEnhanced
 ###
 
-def histEqualization(img, imgName, fig):    
+def histEqualization(img):    
     imgEnhanced = cv2.equalizeHist(img)
 
-    message = "Histogram of **Enhanced** B/W JPG of: " + getFileName(imgName)
-    fig.add_subplot(2, 3, 4)
-    displayHist(imgEnhanced, message)
-    
-    message = "Histogram Equalized Image of: " + getFileName(imgName)
-    fig.add_subplot(2, 3, 5)
-    plt.imshow(imgEnhanced, cmap='gray')
-    plt.title(message, wrap=True)
-    plt.axis('off') #Removes axes
-
-    message = "Transformation Function: "
-    fig.add_subplot(2, 3, 3)
-    TransformationFunction(message, img, imgEnhanced)
+    return imgEnhanced
 ###
 
 # bins are qty of histogram pieces, range is for width of graph
@@ -2182,7 +2201,8 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
     location = destinationFolder + "\\" + imgNameToAppend + getFileName(imgPath)
 
     # all converted images need to be jpg (incase .raw / .gif come up - for consistency)
-    location = location[ : -4] + ".jpg"
+    fullstop = location.rfind(".")
+    location = location[ : fullstop] + ".jpg"
 
     success = cv2.imwrite(location, image) # True or False
     return success
