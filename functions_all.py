@@ -242,7 +242,7 @@ def printDataSetInfo():
     photoPath = currentDir + "\\Notes_DataSet"
     path = walk(photoPath)
 
-    # 3 X 2D Array: Image Sizes, Min/Max Values, Num Pics
+    # 4 X 2D Array: Image Sizes, Min/Max Values, Num Pics
     dataSetInfo = getDataSetInfo(path)
 
     spacers = "-" * 60
@@ -255,8 +255,12 @@ def printDataSetInfo():
     for item in dataSetInfo[1]:
         print(item[0], item[1])
 
+    print("", spacers, "Average X and Y Values:", spacers, sep="\n")
+    for item in dataSetInfo[2]:
+        print(item[0], item[1])
+
     print("", spacers, "Total Number of Pictures in DataSet:", spacers, sep="\n")
-    print(dataSetInfo[2][0][0], dataSetInfo[2][0][1])
+    print(dataSetInfo[3][0][0], dataSetInfo[3][0][1])
 
     tellUser("Printed in Terminal!", labelUpdates)
 ###
@@ -271,6 +275,9 @@ def getDataSetInfo(path):
     numPics = 0
     minX, maxX, minY, maxY = -1, -1, -1, -1
 
+    # get average values
+    averageX, averageY = 0, 0
+
     # path comes from os.path() --> enables traversal through directory
     for root, directories, files in path:
         for file in files:
@@ -278,6 +285,8 @@ def getDataSetInfo(path):
             image = cv2.imread("Notes_DataSet" + "\\" + file, 0)
             (x, y) = image.shape
             temp = "(" + str(x) + "," + str(y) + ")"
+            averageX += x
+            averageY += y
 
             # instantiate min and max vars
             if (numPics == 0):
@@ -294,11 +303,15 @@ def getDataSetInfo(path):
             
             numPics += 1
     
+    averageX = averageX / len(dataSetSizes)
+    averageY = averageY / len(dataSetSizes)
+    
     absoluteDimensions = [["MinX", str(minX)], ["MaxX", str(maxX)], ["MinY", str(minY)], ["MaxY", str(maxY)]]
     totalPics = [["Total Pics", str(numPics)]]
+    averageArray = [["Average X Value", averageX], [averageY, "Average Y Value"]]
 
-    # notice 3 X 2D shape
-    return [dataSetSizes, absoluteDimensions, totalPics]
+    # notice 4 X 2D shape
+    return [dataSetSizes, absoluteDimensions, averageArray, totalPics]
 ###
 
 #------------------------------------------------------------------------------------Open Any Image Functions-------------------
