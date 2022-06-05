@@ -24,7 +24,6 @@ from types import NoneType
 
 # library for image manipulation
 import cv2
-from cv2 import IMREAD_GRAYSCALE
 
 from matplotlib import pyplot as plt
 import numpy as np
@@ -34,6 +33,9 @@ from mahotas import haar # used for haar transform
 from scipy import fft # used for dct transform
 from numpy import r_ # used in DCT compression
 from scipy.fftpack import dct, idct # used for Compression
+
+from skimage.feature import canny #region filling
+from scipy.ndimage import binary_fill_holes #region filling
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -1540,6 +1542,7 @@ def chooseSegment():
     return True
 ###
 
+
 def executeSegmentOption(intVal, img, imgName):
     # give the user more options based on their choice:
     if (intVal == 1):
@@ -1591,8 +1594,11 @@ def chooseEdgeDetectionMethod(intVal, img, imgName):
     Radiobutton(edgeDetectionWindow, text="Complete Contour Detection", variable=threshOption, value=3, width=30).pack(anchor=W, side="top")
     Radiobutton(edgeDetectionWindow, text="Felzenswalbs Contour Detection", variable=threshOption, value=4, width=30).pack(anchor=W, side="top")
 
-    Button(edgeDetectionWindow, text="Choose Segmentation Option", width=50, bg='gray',
-        command=lambda: executeEdgeDetectionChoice(intVal=threshOption.get(), img=img, imgName=imgName)
+    Button(edgeDetectionWindow, text="Choose Segmentation Option and Show", width=50, bg='gray',
+        command=lambda: executeEdgeDetectionChoice(intVal=threshOption.get(), img=img, imgName=imgName, show=True)
+    ).pack(anchor=W, side="top")
+    Button(edgeDetectionWindow, text="Choose Segmentation Option and Save", width=50, bg='gray',
+        command=lambda: executeEdgeDetectionChoice(intVal=threshOption.get(), img=img, imgName=imgName, show=False)
     ).pack(anchor=W, side="top")
     Button(edgeDetectionWindow, text="Close Plots", width=50, bg='gray',
         command=lambda: ( plt.close("Edge Detection Changes") )
@@ -1602,11 +1608,115 @@ def chooseEdgeDetectionMethod(intVal, img, imgName):
 def chooseWatershedMethod(intVal, img, imgName):
     # print("inside ChooseWatershedMethod")
 
-    fig = plt.figure(num="Watershed Changes", figsize=(10, 6))
-    plt.clf() # Should clear last plot but keep window open? 
-    numRows = 3
-    numColumns = 3
+    watershedWindow = Toplevel(window)
+    watershedWindow.title("Choose a watershed option...")
+    watershedWindow.geometry("300x300")
 
+    Button(watershedWindow, text="Apply Watershed and Show", width=50, bg='gray',
+        command=lambda: executeWatershed(img=img, imgName=imgName, show=True)
+    ).pack(anchor=W, side="top")
+    Button(watershedWindow, text="Apply Watershed and Save", width=50, bg='gray',
+        command=lambda: executeWatershed(img=img, imgName=imgName, show=False)
+    ).pack(anchor=W, side="top")
+    Button(watershedWindow, text="Close Plots", width=50, bg='gray',
+        command=lambda: ( plt.close("Watershed Changes") )
+    ).pack(anchor=W, side="top")
+###
+
+def chooseClusteringMethod(intVal, img, imgName):
+    # print("inside ChooseClusteringMethod")
+
+    '''
+    K-means
+
+    more can be implemented if we discover them
+    '''
+    clusteringWindow = Toplevel(window)
+    clusteringWindow.title("Choose a kind of clustering...")
+    clusteringWindow.geometry("300x300")
+
+    threshOption = IntVar()
+    threshOption.set(0)
+
+    Radiobutton(clusteringWindow, text="Iterative K-Means clustering", variable=threshOption, value=1, width=30).pack(anchor=W, side="top")
+    # Radiobutton(clusteringWindow, text="Fuzzy-C clustering", variable=threshOption, value=2, width=30).pack(anchor=W, side="top")
+    # Radiobutton(clusteringWindow, text="Linear Iterative clustering", variable=threshOption, value=3, width=30).pack(anchor=W, side="top")
+
+    Button(clusteringWindow, text="Choose Segmentation Option and Show", width=50, bg='gray',
+        command=lambda: executeClusteringChoice(intVal=threshOption.get(), img=img, imgName=imgName, show=True)
+    ).pack(anchor=W, side="top")
+    Button(clusteringWindow, text="Choose Segmentation Option and Save", width=50, bg='gray',
+        command=lambda: executeClusteringChoice(intVal=threshOption.get(), img=img, imgName=imgName, show=False)
+    ).pack(anchor=W, side="top")
+    Button(clusteringWindow, text="Close Plots", width=50, bg='gray',
+        command=lambda: ( plt.close("Clustering Changes") )
+    ).pack(anchor=W, side="top")
+
+###
+
+def chooseRegionBasedMethod(intVal, img, imgName):
+    print("inside ChooseRegionBasedMethod")
+    '''
+    Region Based
+    Region growing - implement later, big algorithm
+    Region splitting and merging - implement later, big algorithm
+    '''
+
+    regionWindow = Toplevel(window)
+    regionWindow.title("Choose a kind of region...")
+    regionWindow.geometry("300x300")
+
+    option = IntVar()
+    option.set(0)
+
+    Radiobutton(regionWindow, text="Region Filling", variable=option, value=1, width=30).pack(anchor=W, side="top")
+    # Radiobutton(regionWindow, text="Region Growing", variable=option, value=2, width=30).pack(anchor=W, side="top")
+    # Radiobutton(regionWindow, text="Region Splitting and Merging", variable=option, value=3, width=30).pack(anchor=W, side="top")
+
+    Button(regionWindow, text="Choose Segmentation Option and Show", width=50, bg='gray',
+        command=lambda: executeRegionChoice(intVal=option.get(), img=img, imgName=imgName, show=True)
+    ).pack(anchor=W, side="top")
+    Button(regionWindow, text="Choose Segmentation Option and Save", width=50, bg='gray',
+        command=lambda: executeRegionChoice(intVal=option.get(), img=img, imgName=imgName, show=False)
+    ).pack(anchor=W, side="top")
+    Button(regionWindow, text="Close Plots", width=50, bg='gray',
+        command=lambda: ( plt.close("Region Based Changes") )
+    ).pack(anchor=W, side="top")
+###
+
+def chooseThresholdingMethod(intVal, img, imgName):
+    print("inside ChooseThresholdingMethod")
+    '''
+    Simple
+    Manual / Iterative Thresholding
+    Adaptive
+    Otsus method
+    '''
+
+    thresholdingWindow = Toplevel(window)
+    thresholdingWindow.title("Choose a kind of Thresholding...")
+    thresholdingWindow.geometry("300x300")
+
+    threshOption = IntVar()
+    threshOption.set(0)
+
+    Radiobutton(thresholdingWindow, text="Simple Thresholding", variable=threshOption, value=1, width=30).pack(anchor=W, side="top")
+    Radiobutton(thresholdingWindow, text="Iterative Thresholding", variable=threshOption, value=2, width=30).pack(anchor=W, side="top")
+    Radiobutton(thresholdingWindow, text="Adaptive Thresholding", variable=threshOption, value=3, width=30).pack(anchor=W, side="top")
+    Radiobutton(thresholdingWindow, text="Otsu's Method", variable=threshOption, value=4, width=30).pack(anchor=W, side="top")
+
+    Button(thresholdingWindow, text="Choose Segmentation Option and Show", width=50, bg='gray',
+        command=lambda: executeThresholdingChoice(intVal=threshOption.get(), img=img, imgName=imgName, show=True)
+    ).pack(anchor=W, side="top")
+    Button(thresholdingWindow, text="Choose Segmentation Option and Save", width=50, bg='gray',
+        command=lambda: executeThresholdingChoice(intVal=threshOption.get(), img=img, imgName=imgName, show=False)
+    ).pack(anchor=W, side="top")
+    Button(thresholdingWindow, text="Close Plots", width=50, bg='gray',
+        command=lambda: ( plt.close("Segmentation Changes") )
+    ).pack(anchor=W, side="top")
+###
+
+def executeWatershed(img, imgName, show):
     # threshold
     ret, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
@@ -1641,100 +1751,32 @@ def chooseWatershedMethod(intVal, img, imgName):
 
     watershedImage[finalMarkers == -1] = [255, 0, 0]
     watershedImage = cv2.cvtColor(watershedImage, cv2.COLOR_BGR2GRAY) #! convert back to grayscale
+    if (show):
+        fig = plt.figure(num="Watershed Changes", figsize=(10, 6))
+        plt.clf() # Should clear last plot but keep window open? 
+        numRows = 3
+        numColumns = 3
 
-    modifiedImageArray = [img, thresh, opening, sure_bg, sure_fg, unknown, markers, watershedImage]
-    labelArray = ["Original Image", "Thresholded Image", "Morphological Opened Image", "Known Background (black)", "Known Foreground (white)", 
-                    "Unknown Aspects", "Unknown Aspects after Connecting Components (gray)", "Watershed Image"]
+        modifiedImageArray = [img, thresh, opening, sure_bg, sure_fg, unknown, markers, watershedImage]
+        labelArray = ["Original Image", "Thresholded Image", "Morphological Opened Image", "Known Background (black)", "Known Foreground (white)", 
+                        "Unknown Aspects", "Unknown Aspects after Connecting Components (gray)", "Watershed Image"]
 
-    plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        tellUser("Images Shown...", labelUpdates)
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+    else:
+        # save image
+        destinationFolder = "Segmented_Individual_Images"
+        newMessage = "Watershed_"
+        success = saveFile(destinationFolder, imgName, newMessage, watershedImage)   
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
 ###
 
-def chooseClusteringMethod(intVal, img, imgName):
-    print("inside ChooseClusteringMethod")
-
-    '''
-    K-means
-
-    more can be implemented if we discover them
-    '''
-    clusteringWindow = Toplevel(window)
-    clusteringWindow.title("Choose a kind of clustering...")
-    clusteringWindow.geometry("300x300")
-
-    threshOption = IntVar()
-    threshOption.set(0)
-
-    Radiobutton(clusteringWindow, text="Iterative K-Means clustering", variable=threshOption, value=1, width=30).pack(anchor=W, side="top")
-    # Radiobutton(clusteringWindow, text="Fuzzy-C clustering", variable=threshOption, value=2, width=30).pack(anchor=W, side="top")
-    # Radiobutton(clusteringWindow, text="Linear Iterative clustering", variable=threshOption, value=3, width=30).pack(anchor=W, side="top")
-
-    Button(clusteringWindow, text="Choose Segmentation Option", width=50, bg='gray',
-        command=lambda: executeClusteringChoice(intVal=threshOption.get(), img=img, imgName=imgName)
-    ).pack(anchor=W, side="top")
-    Button(clusteringWindow, text="Close Plots", width=50, bg='gray',
-        command=lambda: ( plt.close("Clustering Changes") )
-    ).pack(anchor=W, side="top")
-
-###
-
-def chooseRegionBasedMethod(intVal, img, imgName):
-    print("inside ChooseRegionBasedMethod")
-    '''
-    Region Based
-    Region growing - implement later, big algorithm
-    Region splitting and merging - implement later, big algorithm
-    '''
-
-    regionWindow = Toplevel(window)
-    regionWindow.title("Choose a kind of region...")
-    regionWindow.geometry("300x300")
-
-    option = IntVar()
-    option.set(0)
-
-    Radiobutton(regionWindow, text="Region Filling", variable=option, value=1, width=30).pack(anchor=W, side="top")
-    # Radiobutton(regionWindow, text="Region Growing", variable=option, value=2, width=30).pack(anchor=W, side="top")
-    # Radiobutton(regionWindow, text="Region Splitting and Merging", variable=option, value=3, width=30).pack(anchor=W, side="top")
-
-    Button(regionWindow, text="Choose Segmentation Option", width=50, bg='gray',
-        command=lambda: executeRegionChoice(intVal=option.get(), img=img, imgName=imgName)
-    ).pack(anchor=W, side="top")
-    Button(regionWindow, text="Close Plots", width=50, bg='gray',
-        command=lambda: ( plt.close("Region Based Changes") )
-    ).pack(anchor=W, side="top")
-###
-
-def chooseThresholdingMethod(intVal, img, imgName):
-    print("inside ChooseThresholdingMethod")
-    '''
-    Simple
-    Manual / Iterative Thresholding
-    Adaptive
-    Otsus method
-    '''
-
-    thresholdingWindow = Toplevel(window)
-    thresholdingWindow.title("Choose a kind of Thresholding...")
-    thresholdingWindow.geometry("300x300")
-
-    threshOption = IntVar()
-    threshOption.set(0)
-
-    Radiobutton(thresholdingWindow, text="Simple Thresholding", variable=threshOption, value=1, width=30).pack(anchor=W, side="top")
-    Radiobutton(thresholdingWindow, text="Iterative Thresholding", variable=threshOption, value=2, width=30).pack(anchor=W, side="top")
-    Radiobutton(thresholdingWindow, text="Adaptive Thresholding", variable=threshOption, value=3, width=30).pack(anchor=W, side="top")
-    Radiobutton(thresholdingWindow, text="Otsu's Method", variable=threshOption, value=4, width=30).pack(anchor=W, side="top")
-
-    Button(thresholdingWindow, text="Choose Segmentation Option", width=50, bg='gray',
-        command=lambda: executeThresholdingChoice(intVal=threshOption.get(), img=img, imgName=imgName)
-    ).pack(anchor=W, side="top")
-    Button(thresholdingWindow, text="Close Plots", width=50, bg='gray',
-        command=lambda: ( plt.close("Segmentation Changes") )
-    ).pack(anchor=W, side="top")
-###
-
-def executeRegionChoice(intVal, img, imgName): 
-    print("Inside executeRegionChoice")
+def executeRegionChoice(intVal, img, imgName, show): 
+    # print("Inside executeRegionChoice")
 
     fig = plt.figure(num="Region Based Changes", figsize=(10, 6))
     plt.clf() # Should clear last plot but keep window open? 
@@ -1743,19 +1785,28 @@ def executeRegionChoice(intVal, img, imgName):
 
     if (intVal == 1):
         # region filling
-        from skimage.feature import canny
-        from scipy.ndimage import binary_fill_holes
-
         numRows = 2
         numColumns = 2
 
         cannyImage = canny(img)
         regionFilled = binary_fill_holes(cannyImage)
 
-        modifiedImageArray = [img, cannyImage, regionFilled]
-        labelArray = ["Original Image", "Canny Edge Detection", "Region Filled Image"]
-        
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        if (show):
+            modifiedImageArray = [img, cannyImage, regionFilled]
+            labelArray = ["Original Image", "Canny Edge Detection", "Region Filled Image"]
+
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "Region_Filled_"
+            success = saveFile(destinationFolder, imgName, newMessage, regionFilled)   
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     # elif (intVal == 2):
     #     # region growing
@@ -1770,7 +1821,7 @@ def executeRegionChoice(intVal, img, imgName):
         tellUser("Select an option...", labelUpdates)
 ###
 
-def executeEdgeDetectionChoice(intVal, img, imgName):
+def executeEdgeDetectionChoice(intVal, img, imgName, show):
 
     fig = plt.figure(num="Edge Detection Changes", figsize=(10, 6))
     plt.clf() # Should clear last plot but keep window open? 
@@ -1781,10 +1832,22 @@ def executeEdgeDetectionChoice(intVal, img, imgName):
         # Canny Edge Detection
         edge = cv2.Canny(img,100,200)
 
-        modifiedImageArray = [img, edge]
-        labelArray = ["Original Image", "Canny Edge Detection"]
+        if (show):
+            modifiedImageArray = [img, edge]
+            labelArray = ["Original Image", "Canny Edge Detection"]
+            
+            tellUser("Images Shown...", labelUpdates)
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "Canny_Edge_Detection_"
+            success = saveFile(destinationFolder, imgName, newMessage, edge)   
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     elif (intVal == 2):
         # Simple Contour
@@ -1802,10 +1865,22 @@ def executeEdgeDetectionChoice(intVal, img, imgName):
 
         modifiedImage = cv2.resize(edges, (y, x)) # resize
 
-        modifiedImageArray = [img, resizedImg, threshImg, cannyImg, edges, modifiedImage]
-        labelArray = ["Original Image", "Resized Image", "Thresholded Image", "Canny Edges of Thresholded Image", "Dilated Edges", "Restore Sizes"]
+        if(show):
+            modifiedImageArray = [img, resizedImg, threshImg, cannyImg, edges, modifiedImage]
+            labelArray = ["Original Image", "Resized Image", "Thresholded Image", "Canny Edges of Thresholded Image", "Dilated Edges", "Restore Sizes"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "Simple_Contour_"
+            success = saveFile(destinationFolder, imgName, newMessage, modifiedImage)   
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     elif (intVal == 3):
         # Complete Contour
@@ -1839,11 +1914,23 @@ def executeEdgeDetectionChoice(intVal, img, imgName):
         
         modifiedImage = cv2.resize(dst, (y, x)) # resize
 
-        modifiedImageArray = [img, resizedImg, threshImg, cannyImg, edges, masked, dst, modifiedImage]
-        labelArray = ["Original Image", "Resized Image", "Thresholded Image", "Canny Edges of Thresholded Image", 
-                        "Dilated Edges", "Image after mask", "Image Contours Detected", "resized Image"]
+        if(show):
+            modifiedImageArray = [img, resizedImg, threshImg, cannyImg, edges, masked, dst, modifiedImage]
+            labelArray = ["Original Image", "Resized Image", "Thresholded Image", "Canny Edges of Thresholded Image", 
+                            "Dilated Edges", "Image after mask", "Image Contours Detected", "resized Image"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "Complete_Contour_"
+            success = saveFile(destinationFolder, imgName, newMessage, modifiedImage)   
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
 
     elif (intVal == 4):
@@ -1856,17 +1943,37 @@ def executeEdgeDetectionChoice(intVal, img, imgName):
         res1 = felzenszwalb(img, scale=50)
         res2 = felzenszwalb(img, scale=100)
 
-        modifiedImageArray = [img, res1, res2]
-        labelArray = ["Original Image", "Felzenswalb Image, Scale=50", "Felzenswalb Image, Scale=100"]
+        if(show):
+            modifiedImageArray = [img, res1, res2]
+            labelArray = ["Original Image", "Felzenswalb Image, Scale=50", "Felzenswalb Image, Scale=100"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            
+            newMessage = "Felzenswalb_Scale_50_"
+            success = saveFile(destinationFolder, imgName, newMessage, res1)   
+            if (success):
+                tellUser("First Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
+
+            newMessage = "Felzenswalb_Scale_100_"
+            success = saveFile(destinationFolder, imgName, newMessage, res2)   
+            if (success):
+                tellUser("Second Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     else:
         # should never execute
         tellUser("Select an option...", labelUpdates)
 ###
 
-def executeClusteringChoice(intVal, img, imgName):
+def executeClusteringChoice(intVal, img, imgName, show):
 
     fig = plt.figure(num="Clustering Changes", figsize=(10, 6))
     plt.clf() # Should clear last plot but keep window open? 
@@ -1900,7 +2007,23 @@ def executeClusteringChoice(intVal, img, imgName):
             modifiedImageArray.append(result_image)
             labelArray.append("K-Means Clustering, Size=" + str(i))
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        if (show):
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "K_Means_Clustering_Size_"
+
+            for i in range(2, 5):
+                tempMessage = newMessage + str(i) + "_"
+                success = saveFile(destinationFolder, imgName, tempMessage, modifiedImageArray[i-1])   
+                if (success):
+                    tellUser("Image Saved successfully", labelUpdates)
+                else:
+                    tellUser("Unable to Save File...", labelUpdates)
 
     # elif (intVal == 2):
     #     #
@@ -1913,7 +2036,7 @@ def executeClusteringChoice(intVal, img, imgName):
 
 ###
 
-def executeThresholdingChoice(intVal, img, imgName):
+def executeThresholdingChoice(intVal, img, imgName, show):
     # print("Inside executeThresholdingChoice()")
 
     fig = plt.figure(num="Segmentation Changes", figsize=(8, 4))
@@ -1925,10 +2048,23 @@ def executeThresholdingChoice(intVal, img, imgName):
     if (intVal == 1):
         # Simple 
         returnValue, modifiedImage = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
-        modifiedImageArray = [img, modifiedImage]
-        labelArray = ["Original Image", "Simple Thresholding"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        if (show):
+            modifiedImageArray = [img, modifiedImage]
+            labelArray = ["Original Image", "Simple Thresholding"]
+
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "Simple_Thresholding_"
+            success = saveFile(destinationFolder, imgName, newMessage, modifiedImage)   
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     elif (intVal == 2):
         # Iterative Thresholding
@@ -1942,7 +2078,23 @@ def executeThresholdingChoice(intVal, img, imgName):
             modifiedImageArray.append(modifiedImage)
             labelArray.append("Simple Thresholding using \'" + str(255 // i) + "\'")
 
-        plotImagesSideBySide(fig, modifiedImageArray,  labelArray, numRows, numColumns)
+        if (show):
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray,  labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "Iterative_Thresholding_Size_"
+
+            for i in range(2, 6):
+                tempMessage = newMessage + str(255 // i) + "_"
+
+                success = saveFile(destinationFolder, imgName, tempMessage, modifiedImageArray[i-1])   
+                if (success):
+                    tellUser("Image Saved successfully", labelUpdates)
+                else:
+                    tellUser("Unable to Save File...", labelUpdates)
 
     elif (intVal == 3):
         # Adaptive Thresholding
@@ -1951,13 +2103,33 @@ def executeThresholdingChoice(intVal, img, imgName):
         modifiedImage2 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2) 
         modifiedImage3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 
-        modifiedImageArray = [img, modifiedImage1, modifiedImage2, modifiedImage3]
-        labelArray = ["Original Image", "Simple Thresholding", "Adaptive Mean Thresholding", "Adaptive Gaussian Thresholding"]
-
         numRows = 2
         numColumns = 2
+        if (show):
+            modifiedImageArray = [img, modifiedImage1, modifiedImage2, modifiedImage3]
+            labelArray = ["Original Image", "Simple Thresholding", "Adaptive Mean Thresholding", "Adaptive Gaussian Thresholding"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            tellUser("Images Shown...", labelUpdates)
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+
+            newMessage = "Adaptive_Mean_"
+            success = saveFile(destinationFolder, imgName, newMessage, modifiedImage2)   
+            if (success):
+                tellUser("First Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
+
+            newMessage = "Adaptive_Gaussian_"
+            success = saveFile(destinationFolder, imgName, newMessage, modifiedImage3)   
+            if (success):
+                tellUser("First Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
+
 
     elif (intVal == 4):
         # Otsu's Method
@@ -1972,35 +2144,47 @@ def executeThresholdingChoice(intVal, img, imgName):
         blur = cv2.GaussianBlur(img, (5, 5), 0)
         ret3,th3 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        # plot all the images and their histograms
-        modifiedImageArray = [img, th1, img, th2, blur, th3]
-        labelArray = ['Original Image','Global Thresholding (v=127)','Original Image',"Otsu's Thresholding",'Gaussian filtered Image',"Otsu's Thresholding"]
+        if (show):
+            # plot all the images and their histograms
+            modifiedImageArray = [img, th1, img, th2, blur, th3]
+            labelArray = ['Original Image','Global Thresholding (v=127)','Original Image',"Otsu's Thresholding",'Gaussian filtered Image',"Otsu's Thresholding"]
 
-        numRows = 3
-        numColumns = 3
-        
-        x = 0
-        for i in range(3):
-            x += 1
-            fig.add_subplot(numRows, numColumns, x)
+            numRows = 3
+            numColumns = 3
+            
+            x = 0
+            for i in range(3):
+                x += 1
+                fig.add_subplot(numRows, numColumns, x)
 
-            plt.imshow(modifiedImageArray[i*2], cmap='gray')
-            plt.title(labelArray[i], wrap=True)
-            plt.axis('off') #Removes axes
+                plt.imshow(modifiedImageArray[i*2], cmap='gray')
+                plt.title(labelArray[i], wrap=True)
+                plt.axis('off') #Removes axes
 
-            x += 1
-            fig.add_subplot(numRows, numColumns, x)
-            plt.hist(modifiedImageArray[i*2].ravel(), 256)
-            plt.title("Histogram", wrap=True)
+                x += 1
+                fig.add_subplot(numRows, numColumns, x)
+                plt.hist(modifiedImageArray[i*2].ravel(), 256)
+                plt.title("Histogram", wrap=True)
 
-            x += 1
-            fig.add_subplot(numRows, numColumns, x)
-            plt.imshow(modifiedImageArray[i + 1], cmap='gray')
-            plt.title(labelArray[i*2 +1], wrap=True)
-            plt.axis('off') #Removes axes
+                x += 1
+                fig.add_subplot(numRows, numColumns, x)
+                plt.imshow(modifiedImageArray[i + 1], cmap='gray')
+                plt.title(labelArray[i*2 +1], wrap=True)
+                plt.axis('off') #Removes axes
 
-        plt.tight_layout()
-        plt.show()
+            tellUser("Images Shown...", labelUpdates)
+
+            plt.tight_layout()
+            plt.show()
+        else:
+            # save image
+            destinationFolder = "Segmented_Individual_Images"
+            newMessage = "Otsu_Thresholding_"
+            success = saveFile(destinationFolder, imgName, newMessage, th3)   
+            if (success):
+                tellUser("First Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     else:
         # should never execute
