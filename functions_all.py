@@ -2182,7 +2182,7 @@ def executeThresholdingChoice(intVal, img, imgName, show):
             newMessage = "Otsu_Thresholding_"
             success = saveFile(destinationFolder, imgName, newMessage, th3)   
             if (success):
-                tellUser("First Image Saved successfully", labelUpdates)
+                tellUser("Image Saved successfully", labelUpdates)
             else:
                 tellUser("Unable to Save File...", labelUpdates)
 
@@ -2212,8 +2212,11 @@ def chooseImageTransformation():
         Radiobutton(imageTransformationWindow, text="Apply Haar Transform", variable=imageTransformOption, value=2, width=30).pack(anchor=W, side="top")
         Radiobutton(imageTransformationWindow, text="Apply Discrete Cosine Transform", variable=imageTransformOption, value=3, width=30).pack(anchor=W, side="top")
 
-        Button(imageTransformationWindow, text="Choose Segmentation Option", width=50, bg='gray',
-            command=lambda: executeImageTransformationChoice(intVal=imageTransformOption.get(), img=imgGrayscale, imgName=window.filename)
+        Button(imageTransformationWindow, text="Choose Segmentation Option and Show", width=50, bg='gray',
+            command=lambda: executeImageTransformationChoice(intVal=imageTransformOption.get(), img=imgGrayscale, imgName=window.filename, show=True)
+        ).pack(anchor=W, side="top")
+        Button(imageTransformationWindow, text="Choose Segmentation Option and Save", width=50, bg='gray',
+            command=lambda: executeImageTransformationChoice(intVal=imageTransformOption.get(), img=imgGrayscale, imgName=window.filename, show=False)
         ).pack(anchor=W, side="top")
         Button(imageTransformationWindow, text="Close Plots", width=50, bg='gray',
             command=lambda: ( plt.close("Image Transformation Changes") )
@@ -2222,7 +2225,7 @@ def chooseImageTransformation():
         tellUser("Unable to Get Grayscale Image for Image Transformation Window...", labelUpdates)
 ###
 
-def executeImageTransformationChoice(intVal, img, imgName):
+def executeImageTransformationChoice(intVal, img, imgName, show):
     # print("Inside executeImageTransformationOption()")
 
     fig = plt.figure(num="Image Transformation Changes", figsize=(8, 4))
@@ -2260,10 +2263,28 @@ def executeImageTransformationChoice(intVal, img, imgName):
         img_back_high_pass = np.fft.ifft2(f_ishift_high_pass)
         img_back_high_pass = np.log(np.abs(img_back_high_pass))
 
-        modifiedImageArray = [img, magnitude_spectrum, img_back_low_pass, img_back_high_pass]
-        labelArray = ["Original Image", "Magnitude Spectrum", "Low Pass Filter", "High Pass Filter"]
+        if (show):
+            modifiedImageArray = [img, magnitude_spectrum, img_back_low_pass, img_back_high_pass]
+            labelArray = ["Original Image", "Magnitude Spectrum", "Low Pass Filter", "High Pass Filter"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Transformed_Individual_Images"
+
+            newMessage = "Low_Pass_Filter_"
+            success = saveFile(destinationFolder, imgName, newMessage, img_back_low_pass)   
+            if (success):
+                tellUser("First Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
+
+            newMessage = "High_Pass_Filter_"
+            success = saveFile(destinationFolder, imgName, newMessage, img_back_high_pass)   
+            if (success):
+                tellUser("Second Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     elif (intVal == 2):
         #Haar Transform
@@ -2271,10 +2292,20 @@ def executeImageTransformationChoice(intVal, img, imgName):
         # haar method comes from mahotas package
         haar_transform = haar(img)
 
-        modifiedImageArray = [img, haar_transform]
-        labelArray = ["Original Image", "Haar Transform"]
+        if (show):
+            modifiedImageArray = [img, haar_transform]
+            labelArray = ["Original Image", "Haar Transform"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Transformed_Individual_Images"
+            newMessage = "Haar_"
+            success = saveFile(destinationFolder, imgName, newMessage, haar_transform)   
+            if (success):
+                tellUser("First Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     elif (intVal == 3):
         numRows = 1
@@ -2284,10 +2315,20 @@ def executeImageTransformationChoice(intVal, img, imgName):
         dct_img = fft.dct(img)
         idct_img = fft.idct(dct_img)
 
-        modifiedImageArray = [img, dct_img, idct_img]
-        labelArray = ["Original Image", "DCT Image Spectrum", "DCT Transformed Image"]
+        if (show):
+            modifiedImageArray = [img, dct_img, idct_img]
+            labelArray = ["Original Image", "DCT Image Spectrum", "DCT Transformed Image"]
 
-        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        else:
+            # save image
+            destinationFolder = "Transformed_Individual_Images"
+            newMessage = "DCT_"
+            success = saveFile(destinationFolder, imgName, newMessage, idct_img)   
+            if (success):
+                tellUser("First Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     else:
         # should never execute
