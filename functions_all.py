@@ -989,7 +989,8 @@ def chooseSharpening():
         ).pack()
         Button(sharpeningWindow, text="Sharpen and Save", width=35,
                 bg="silver", command=lambda: executeSharpening(imgGrayscale, imgName=window.filename, fig=figure, show = False) 
-        ).pack()        
+        ).pack()  
+        Button(sharpeningWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()      
     else:
         tellUser("Unable to Get Grayscale Image for Sharpening Window...", labelUpdates)
 ###
