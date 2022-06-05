@@ -855,15 +855,25 @@ def chooseSmoothing():
         arrayValue.pack() #must be seperate for some reason...
 
         Button(
-            smoothingWindow, text="Smooth", width=35, bg='silver',
+            smoothingWindow, text="Smooth and Show", width=35, bg='silver',
             command=lambda: executeSmoothing(
                                 intVal=enhanceOption.get(), 
                                 arraySize=int(arrayValue.get()),
                                 img=imgGrayscale, 
-                                imgName=window.filename
+                                imgName=window.filename,
+                                show = True
                             ) 
         ).pack()
-        # Button above sends the user elsewhere
+        Button(
+            smoothingWindow, text="Smooth and Save", width=35, bg='silver',
+            command=lambda: executeSmoothing(
+                                intVal=enhanceOption.get(), 
+                                arraySize=int(arrayValue.get()),
+                                img=imgGrayscale, 
+                                imgName=window.filename,
+                                show = False
+                            ) 
+        ).pack()
 
         Button(smoothingWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
         
@@ -871,65 +881,79 @@ def chooseSmoothing():
         tellUser("Unable to Get Grayscale Image for Smoothing Window...", labelUpdates)
 ###
 
-def executeSmoothing(intVal, arraySize, img, imgName):
-    tellUser("Opening now...", labelUpdates)
-
+def executeSmoothing(intVal, arraySize, img, imgName, show):
     fig = plt.figure(num="Smoothing", figsize=(8, 5))
     plt.clf() # Should clear last plot but keep window open? 
 
-    fig.add_subplot(1, 2, 1)
-    message = "B\W JPG Image of: " + getFileName(imgName)
-    plt.imshow(img, cmap='gray')
-    plt.title(message, wrap=True)
-    plt.axis('off') #Removes axes
+    newImg = [[]]
+    newMessage = ""
 
-    fig.add_subplot(1, 2, 2)
     if (intVal == 1):
-        # histEqualization(img, imgName, fig)
-        simpleSmooth(img, imgName, arraySize)
+        newImg = simpleSmooth(img, arraySize)
+        newMessage = 'Simple_Smooth_'
+
     elif (intVal == 2):
-        movingAverageSmooth(img, imgName, arraySize)
+        newImg = movingAverageSmooth(img, arraySize)
+        newMessage = 'Moving_Average_Smooth_'
+
     elif (intVal == 3):
-        gaussianSmooth(img, imgName, arraySize)
+        newImg = gaussianSmooth(img, arraySize)
+        newMessage = 'Gaussian_Smooth_'
+
     else:
-        medianSmooth(img, imgName, arraySize)
+        newImg = medianSmooth(img, arraySize)
+        newMessage = 'Median_Smooth_'
+    if (show):
+        tellUser("Opening now...", labelUpdates)
 
-    plt.tight_layout() # Prevents title overlap in display
-    plt.show()   
+        fig.add_subplot(1, 2, 1)
+        message = "B\W JPG Image of: " + getFileName(imgName)
+        plt.imshow(img, cmap='gray')
+        plt.title(message, wrap=True)
+        plt.axis('off') #Removes axes
+
+        fig.add_subplot(1, 2, 2)
+        plt.subplot(122)
+        plt.imshow(newImg, cmap='gray')
+        plt.title(newMessage, wrap=True)
+        plt.axis('off') #Removes axes
+
+        plt.tight_layout() # Prevents title overlap in display
+        plt.show()  
+    else:
+        # save image
+        destinationFolder = "Smoothed_Individual_Images"
+        success = saveFile(destinationFolder, imgName, newMessage, newImg)   
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
 ###
 
-def medianSmooth(img, imgName, arraySize):
+def medianSmooth(img, arraySize):
     median = cv2.medianBlur(img,arraySize)
-    plt.imshow(median, cmap='gray')
-    plt.title('Median Smooth of '+ getFileName(imgName), wrap=True)
-    plt.axis('off') #Removes axes
+    
+    return median
 ###
 
-def gaussianSmooth(img, imgName, arraySize):
+def gaussianSmooth(img, arraySize):
     blur = cv2.GaussianBlur(img,(arraySize,arraySize),0)
-    plt.imshow(blur, cmap='gray')
-    plt.title('Gaussian Smooth of '+ getFileName(imgName), wrap=True)
-    plt.axis('off') #Removes axes
+    
+    return blur
 ###
 
-def movingAverageSmooth(img, imgName, arraySize):
+def movingAverageSmooth(img, arraySize):
     kernel = np.ones((arraySize,arraySize), np.float32)/(arraySize * arraySize) # fills with all 1s
     dst = cv2.filter2D(img,-1,kernel)
     
-    plt.subplot(122)
-    plt.imshow(dst, cmap='gray')
-    plt.title('Moving Average Smooth of '+ getFileName(imgName), wrap=True)
-    plt.axis('off') #Removes axes
+    return dst
 ###
 
-def simpleSmooth(img, imgName, arraySize):
+def simpleSmooth(img, arraySize):
     kernel = np.full((arraySize,arraySize), 1/(arraySize * arraySize)) # fills with numbers in array
     dst = cv2.filter2D(img,-1,kernel)
-    
-    plt.subplot(122)
-    plt.imshow(dst, cmap='gray')
-    plt.title('Simple Smooth of '+ getFileName(imgName), wrap=True)
-    plt.axis('off') #Removes axes
+
+    return dst
 ###
 
 #------------------------------------------------------------------------------------Sharpening Functions Below-----------------
