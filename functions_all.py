@@ -1040,8 +1040,11 @@ def chooseMorphology():
         Radiobutton(morphWindow, text="Boundary Extraction", variable=enhanceOption, value=5).pack(anchor=W)
         # Radiobutton(smoothingWindow, text="Power Law (Gamma) Transformations", variable=enhanceOption, value=5).pack(anchor=W)
 
-        Button(morphWindow, text="Morph", width=35, bg='gray',
-            command=lambda: executeMorphOption(intVal=enhanceOption.get(), binaryArray=imgBinary, imgName=window.filename) 
+        Button(morphWindow, text="Morph and Show", width=35, bg='gray',
+            command=lambda: executeMorphOption(intVal=enhanceOption.get(), binaryArray=imgBinary, imgName=window.filename, show = True) 
+        ).pack()
+        Button(morphWindow, text="Morph and Save", width=35, bg='gray',
+            command=lambda: executeMorphOption(intVal=enhanceOption.get(), binaryArray=imgBinary, imgName=window.filename, show = False) 
         ).pack()
         Button(morphWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
         
@@ -1050,44 +1053,52 @@ def chooseMorphology():
     return True
 ###
 
-def executeMorphOption(intVal, binaryArray, imgName):
+def executeMorphOption(intVal, binaryArray, imgName, show):
     fig = plt.figure(num="Morphological Changes", figsize=(8, 4))
     plt.clf() # Should clear last plot but keep window open? 
 
-    fig.add_subplot(1, 2, 1)
-
-    plt.imshow(binaryArray, cmap='gray')
-    plt.title('Binary Image of '+ getFileName(imgName), wrap=True)
-
-    fig.add_subplot(1, 2, 2)
+    newImg = [[]]
+    newMessage = ""
 
     if (intVal == 1):
-        dilatedArray = executeDilation(array=binaryArray)
+        newImg = executeDilation(array=binaryArray)
+        newMessage = "Dilated_Binary_"
         
-        plt.imshow(dilatedArray, cmap='gray')
-        plt.title('Dilated Binary Image of '+ getFileName(imgName), wrap=True)
     elif (intVal == 2):
-        dilatedArray = executeErosion(array=binaryArray)
+        newImg = executeErosion(array=binaryArray)
+        newMessage = "Eroded_Binary_"
         
-        plt.imshow(dilatedArray, cmap='gray')
-        plt.title('Eroded Binary Image of '+ getFileName(imgName), wrap=True)
     elif (intVal == 3):
-        dilatedArray = executeOpening(array=binaryArray)
-        
-        plt.imshow(dilatedArray, cmap='gray')
-        plt.title('Opening Binary Image of '+ getFileName(imgName), wrap=True)
-    elif (intVal == 4):
-        dilatedArray = executeClosing(array=binaryArray)
-        
-        plt.imshow(dilatedArray, cmap='gray')
-        plt.title('Closing Binary Image of '+ getFileName(imgName), wrap=True)
-    else:
-        dilatedArray = executeBoundaryExtraction(array=binaryArray)
-        
-        plt.imshow(dilatedArray, cmap='gray')
-        plt.title('Boundary of Binary Image of '+ getFileName(imgName), wrap=True)
+        newImg = executeOpening(array=binaryArray)
+        newMessage = "Opened_Binary_"
 
-    plt.show()
+    elif (intVal == 4):
+        newImg = executeClosing(array=binaryArray)
+        newMessage = "Closing_Binary_"
+        
+    else:
+        newImg = executeBoundaryExtraction(array=binaryArray)
+        newMessage = "Boundary_Binary_"
+
+    if (show):
+        fig.add_subplot(1, 2, 1)
+
+        plt.imshow(binaryArray, cmap='gray')
+        plt.title('Binary Image of '+ getFileName(imgName), wrap=True)
+
+        fig.add_subplot(1, 2, 2)
+        plt.imshow(newImg, cmap='gray')
+        plt.title(newMessage + 'of_'+ getFileName(imgName), wrap=True)
+
+        plt.show()
+    else:
+        # save image
+        destinationFolder = "Morphological_Changed_Individual_Images"
+        success = saveFile(destinationFolder, imgName, newMessage, newImg)   
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
 ###
 
 # here, we get boundary of an image
