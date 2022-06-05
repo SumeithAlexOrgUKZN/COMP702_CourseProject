@@ -969,10 +969,10 @@ def chooseSharpening():
         sharpeningWindow.title("Image Enhancements Below")
         sharpeningWindow.geometry("300x300")
 
-        Button(sharpeningWindow, text="Sharpen and Show", 
+        Button(sharpeningWindow, text="Sharpen and Show", width=35, 
                 bg="silver", command=lambda: executeSharpening(imgGrayscale, imgName=window.filename, fig=figure, show = True) 
         ).pack()
-        Button(sharpeningWindow, text="Sharpen and Save", 
+        Button(sharpeningWindow, text="Sharpen and Save", width=35,
                 bg="silver", command=lambda: executeSharpening(imgGrayscale, imgName=window.filename, fig=figure, show = False) 
         ).pack()        
     else:
@@ -1217,8 +1217,11 @@ def chooseMask():
         R13 = Radiobutton(maskWindow, text="\'Sobel\' -45 degrees", variable=maskOption1, value=13)
         R13.pack(anchor=W, side="top")
 
-        Button(maskWindow, text="Apply Mask", width=35, bg='gray',
-            command=lambda: executeMaskOption(intVal=maskOption1.get(), img=imgGrayscale, imgName=window.filename) 
+        Button(maskWindow, text="Apply Mask and Show", width=35, bg='gray',
+            command=lambda: executeMaskOption(intVal=maskOption1.get(), img=imgGrayscale, imgName=window.filename, show=True) 
+        ).pack()
+        Button(maskWindow, text="Apply Mask and Save", width=35, bg='gray',
+            command=lambda: executeMaskOption(intVal=maskOption1.get(), img=imgGrayscale, imgName=window.filename, show=False) 
         ).pack()
         Button(maskWindow, text="Close Plots", width=35, bg='gray',
             command=lambda: (plt.close("Mask Changes"))
@@ -1230,83 +1233,107 @@ def chooseMask():
     return True
 ###
 
-def executeMaskOption(intVal, img, imgName):
+def executeMaskOption(intVal, img, imgName, show):
 
     fig = plt.figure(num="Mask Changes", figsize=(8, 4))
     plt.clf() # Should clear last plot but keep window open? 
 
-    fig.add_subplot(1, 3, 1)
-
-    plt.imshow(img, cmap='gray')
-    plt.title('Original Image of '+ getFileName(imgName), wrap=True)
+    newImg = [[]]
+    newMessage = ""
 
     # 7 options
     if (intVal == 1):
         # Laplacian Mask
         newImg, mask = applyLaplacianMask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Laplacian_Mask_"
+
     elif (intVal == 2):
         # Horizontal Mask
         newImg, mask = applyStandardHorizontalMask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Horizontal_Standard_Mask_"
+
     elif (intVal == 3):
         # Vertical Mask
         newImg, mask = applyStandardVerticalMask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Vertical_Standard_Mask_"
+
     elif (intVal == 4):
         # +45 degree Mask
         newImg, mask = applyStandardPositive45Mask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Positive_45_Standard_Mask_"
+
     elif (intVal == 5):
         # -45 degree Mask
         newImg, mask = applyStandardNegative45Mask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Negative_45_Standard_Mask_"
+
     elif (intVal == 6):
         # Horizontal Mask
         newImg, mask = applyPrewittHorizontalMask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Horizontal_Prewitt_Mask_"
+
     elif (intVal == 7):
         # Vertical Mask
         newImg, mask = applyPrewittVerticalMask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Vertical_Prewitt_Mask_"
+
     elif (intVal == 8):
         # +45 degree Mask
         newImg, mask = applyPrewittPositive45Mask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Positive_45_Prewitt_Mask_"
+
     elif (intVal == 9):
         # -45 degree Mask
         newImg, mask = applyPrewittNegative45Mask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Negative_45_Prewitt_Mask_"
+
     elif (intVal == 10):
         # Horizontal Mask
         newImg, mask = applySobelHorizontalMask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Horizontal_Sobel_Mask_"
+
     elif (intVal == 11):
         # Vertical Mask
         newImg, mask = applySobelVerticalMask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Vertical_Sobel_Mask_"
+
     elif (intVal == 12):
         # +45 degree Mask
         newImg, mask = applySobelPositive45Mask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Positive_45_Sobel_Mask_"
+
     elif (intVal == 13):
         # -45 degree Mask
         newImg, mask = applySobelNegative45Mask(img)
-        plotMask(fig, newImg, mask, imgName)
+        newMessage = "Negative_45_Sobel_Mask_"
+        
     else:
         tellUser("Select an option...", labelUpdates)
  
+    if (show):
+        fig.add_subplot(1, 3, 1)
 
-    plt.tight_layout() # Prevents title overlap in display
-    plt.show()  
+        plt.imshow(img, cmap='gray')
+        plt.title('Original Image of '+ getFileName(imgName), wrap=True)
 
-    return True
+        plotMask(fig, newImg, mask, imgName, newMessage)
+
+        plt.tight_layout() # Prevents title overlap in display
+        plt.show()  
+    else:
+        # save image
+        destinationFolder = "Masked_Individual_Images"
+        success = saveFile(destinationFolder, imgName, newMessage, newImg)   
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
 ###
 
-def plotMask(fig, newImg, mask, imgName):
+def plotMask(fig, newImg, mask, imgName, newMessage):
     fig.add_subplot(1, 3, 2)
     plt.imshow(newImg, cmap='gray')
-    plt.title('Laplacian Mask over '+ getFileName(imgName), wrap=True)
+    plt.title(newMessage + "of_" + getFileName(imgName), wrap=True)
     plt.axis('off') #Removes axes
 
     fig.add_subplot(1, 3, 3)
