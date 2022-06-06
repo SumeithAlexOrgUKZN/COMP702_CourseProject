@@ -13,29 +13,29 @@ Summary:
 #----------------------------------------------------------------------------------------------------------------Packages Below
 
 # Tkinter is the GUI 
-from cProfile import label
-from inspect import getfile
 import tkinter as tk
 from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
-
-# getcwd == Get Current Working Directory, walk = traverses a directory
-from os import getcwd, walk, mkdir, remove
-from types import NoneType
 
 # library for image manipulation
 import cv2
 
 from matplotlib import pyplot as plt
+
 import numpy as np
+from numpy import r_ # used in DCT compression
 
 from skimage.segmentation import felzenszwalb # type of segmentation method
-from mahotas import haar # used for haar transform
-from scipy import fft # used for dct transform
-from numpy import r_ # used in DCT compression
-from scipy.fftpack import dct, idct # used for Compression
-
 from skimage.feature import canny #region filling
+
+from mahotas import haar # used for haar transform
+
+from scipy import fft # used for dct transform
+from scipy.fftpack import dct, idct # used for Compression
 from scipy.ndimage import binary_fill_holes #region filling
+
+# getcwd == Get Current Working Directory, walk = traverses a directory
+from os import getcwd, walk, mkdir, remove
+from types import NoneType
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -2482,18 +2482,6 @@ def getFileName(path):
     if (backslashLocation == -1):
         backslashLocation = path.rfind("\\")
     return path[ backslashLocation + 1 : ]
-###
-
-def showArrays(fig, array, numRows, numColumns):
-    for i in range(len(array)):
-        fig.add_subplot(numRows, numColumns, i+1)
-        plt.table(cellText=array[i], loc='center')
-        plt.axis('off') #Removes axes
-
-    plt.tight_layout()
-    plt.show()
-
-    tellUser("Changes displayed...", labelUpdates)
 ###
 
 # allows for any number of images to be placed in a grid
