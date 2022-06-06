@@ -681,7 +681,7 @@ def executeEnhancement(intVal, img, imgName, show):
     if (intVal == 1):
         # 2 variables here used after this loop
         newImg = histEqualization(img)
-        newMessage = "Histogram_Equalized_"
+        newMessage = "HistogramEqualized_"
 
     elif (intVal == 2):
         # 2 variables here used after this loop
@@ -696,7 +696,7 @@ def executeEnhancement(intVal, img, imgName, show):
     elif (intVal == 4):
         # 2 variables here used after this loop
         newImg = logTransform(img)
-        newMessage = "Logarithmic_Transformation_"
+        newMessage = "LogarithmicTransformation_"
 
     else:
         textBoxWindow = Toplevel(window)
@@ -771,7 +771,7 @@ def TransformationFunction(message, input, output):
 
 def gammaTransform(img, imgName, cValue, gammaValue, fig, show):
     imageEnhanced = np.array(cValue*np.power(img,gammaValue))
-    newMessage = "Gamma_Transformation_"
+    newMessage = "GammaTransformation_"
 
     if (show):
         fig.add_subplot(2, 3, 1)
@@ -905,19 +905,19 @@ def executeSmoothing(intVal, arraySize, img, imgName, show):
 
     if (intVal == 1):
         newImg = simpleSmooth(img, arraySize)
-        newMessage = 'Simple_Smooth_'
+        newMessage = 'SimpleSmooth_'
 
     elif (intVal == 2):
         newImg = movingAverageSmooth(img, arraySize)
-        newMessage = 'Moving_Average_Smooth_'
+        newMessage = 'MovingAverageSmooth_'
 
     elif (intVal == 3):
         newImg = gaussianSmooth(img, arraySize)
-        newMessage = 'Gaussian_Smooth_'
+        newMessage = 'GaussianSmooth_'
 
     else:
         newImg = medianSmooth(img, arraySize)
-        newMessage = 'Median_Smooth_'
+        newMessage = 'MedianSmooth_'
     if (show):
         tellUser("Opening now...", labelUpdates)
 
@@ -1078,23 +1078,23 @@ def executeMorphOption(intVal, binaryArray, imgName, show):
 
     if (intVal == 1):
         newImg = executeDilation(array=binaryArray)
-        newMessage = "Dilated_Binary_"
+        newMessage = "DilatedBinary_"
         
     elif (intVal == 2):
         newImg = executeErosion(array=binaryArray)
-        newMessage = "Eroded_Binary_"
+        newMessage = "ErodedBinary_"
         
     elif (intVal == 3):
         newImg = executeOpening(array=binaryArray)
-        newMessage = "Opened_Binary_"
+        newMessage = "OpenedBinary_"
 
     elif (intVal == 4):
         newImg = executeClosing(array=binaryArray)
-        newMessage = "Closing_Binary_"
+        newMessage = "ClosingBinary_"
         
     else:
         newImg = executeBoundaryExtraction(array=binaryArray)
-        newMessage = "Boundary_Binary_"
+        newMessage = "BoundaryBinary_"
 
     if (show):
         fig.add_subplot(1, 2, 1)
@@ -1261,67 +1261,67 @@ def executeMaskOption(intVal, img, imgName, show):
     if (intVal == 1):
         # Laplacian Mask
         newImg, mask = applyLaplacianMask(img)
-        newMessage = "Laplacian_Mask_"
+        newMessage = "LaplacianMask_"
 
     elif (intVal == 2):
         # Horizontal Mask
         newImg, mask = applyStandardHorizontalMask(img)
-        newMessage = "Horizontal_Standard_Mask_"
+        newMessage = "HorizontalStandardMask_"
 
     elif (intVal == 3):
         # Vertical Mask
         newImg, mask = applyStandardVerticalMask(img)
-        newMessage = "Vertical_Standard_Mask_"
+        newMessage = "VerticalStandardMask_"
 
     elif (intVal == 4):
         # +45 degree Mask
         newImg, mask = applyStandardPositive45Mask(img)
-        newMessage = "Positive_45_Standard_Mask_"
+        newMessage = "Positive45StandardMask_"
 
     elif (intVal == 5):
         # -45 degree Mask
         newImg, mask = applyStandardNegative45Mask(img)
-        newMessage = "Negative_45_Standard_Mask_"
+        newMessage = "Negative45StandardMask_"
 
     elif (intVal == 6):
         # Horizontal Mask
         newImg, mask = applyPrewittHorizontalMask(img)
-        newMessage = "Horizontal_Prewitt_Mask_"
+        newMessage = "HorizontalPrewittMask_"
 
     elif (intVal == 7):
         # Vertical Mask
         newImg, mask = applyPrewittVerticalMask(img)
-        newMessage = "Vertical_Prewitt_Mask_"
+        newMessage = "VerticalPrewittMask_"
 
     elif (intVal == 8):
         # +45 degree Mask
         newImg, mask = applyPrewittPositive45Mask(img)
-        newMessage = "Positive_45_Prewitt_Mask_"
+        newMessage = "Positive45PrewittMask_"
 
     elif (intVal == 9):
         # -45 degree Mask
         newImg, mask = applyPrewittNegative45Mask(img)
-        newMessage = "Negative_45_Prewitt_Mask_"
+        newMessage = "Negative45PrewittMask_"
 
     elif (intVal == 10):
         # Horizontal Mask
         newImg, mask = applySobelHorizontalMask(img)
-        newMessage = "Horizontal_Sobel_Mask_"
+        newMessage = "HorizontalSobelMask_"
 
     elif (intVal == 11):
         # Vertical Mask
         newImg, mask = applySobelVerticalMask(img)
-        newMessage = "Vertical_Sobel_Mask_"
+        newMessage = "VerticalSobelMask_"
 
     elif (intVal == 12):
         # +45 degree Mask
         newImg, mask = applySobelPositive45Mask(img)
-        newMessage = "Positive_45_Sobel_Mask_"
+        newMessage = "Positive45SobelMask_"
 
     elif (intVal == 13):
         # -45 degree Mask
         newImg, mask = applySobelNegative45Mask(img)
-        newMessage = "Negative_45_Sobel_Mask_"
+        newMessage = "Negative45SobelMask_"
         
     else:
         tellUser("Select an option...", labelUpdates)
@@ -1815,7 +1815,7 @@ def executeRegionChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "Region_Filled_"
+            newMessage = "RegionFilled_"
             success = saveFile(destinationFolder, imgName, newMessage, regionFilled)   
             if (success):
                 tellUser("Image Saved successfully", labelUpdates)
@@ -1856,7 +1856,7 @@ def executeEdgeDetectionChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "Canny_Edge_Detection_"
+            newMessage = "CannyEdgeDetection_"
             success = saveFile(destinationFolder, imgName, newMessage, edge)   
             if (success):
                 tellUser("Image Saved successfully", labelUpdates)
@@ -1889,7 +1889,7 @@ def executeEdgeDetectionChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "Simple_Contour_"
+            newMessage = "SimpleContour_"
             success = saveFile(destinationFolder, imgName, newMessage, modifiedImage)   
             if (success):
                 tellUser("Image Saved successfully", labelUpdates)
@@ -1939,7 +1939,7 @@ def executeEdgeDetectionChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "Complete_Contour_"
+            newMessage = "CompleteContour_"
             success = saveFile(destinationFolder, imgName, newMessage, modifiedImage)   
             if (success):
                 tellUser("Image Saved successfully", labelUpdates)
@@ -1968,14 +1968,14 @@ def executeEdgeDetectionChoice(intVal, img, imgName, show):
             # save image
             destinationFolder = "Segmented_Individual_Images"
             
-            newMessage = "Felzenswalb_Scale_50_"
+            newMessage = "FelzenswalbScale50_"
             success = saveFile(destinationFolder, imgName, newMessage, res1)   
             if (success):
                 tellUser("First Image Saved successfully", labelUpdates)
             else:
                 tellUser("Unable to Save File...", labelUpdates)
 
-            newMessage = "Felzenswalb_Scale_100_"
+            newMessage = "FelzenswalbScale100_"
             success = saveFile(destinationFolder, imgName, newMessage, res2)   
             if (success):
                 tellUser("Second Image Saved successfully", labelUpdates)
@@ -2029,7 +2029,7 @@ def executeClusteringChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "K_Means_Clustering_Size_"
+            newMessage = "KMeansClusteringSize"
 
             for i in range(2, 5):
                 tempMessage = newMessage + str(i) + "_"
@@ -2073,7 +2073,7 @@ def executeThresholdingChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "Simple_Thresholding_"
+            newMessage = "SimpleThresholding_"
             success = saveFile(destinationFolder, imgName, newMessage, modifiedImage)   
             if (success):
                 tellUser("Image Saved successfully", labelUpdates)
@@ -2099,7 +2099,7 @@ def executeThresholdingChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "Iterative_Thresholding_Size_"
+            newMessage = "IterativeThresholdingSize"
 
             for i in range(2, 6):
                 tempMessage = newMessage + str(255 // i) + "_"
@@ -2130,14 +2130,14 @@ def executeThresholdingChoice(intVal, img, imgName, show):
             # save image
             destinationFolder = "Segmented_Individual_Images"
 
-            newMessage = "Adaptive_Mean_"
+            newMessage = "AdaptiveMean_"
             success = saveFile(destinationFolder, imgName, newMessage, modifiedImage2)   
             if (success):
                 tellUser("First Image Saved successfully", labelUpdates)
             else:
                 tellUser("Unable to Save File...", labelUpdates)
 
-            newMessage = "Adaptive_Gaussian_"
+            newMessage = "AdaptiveGaussian_"
             success = saveFile(destinationFolder, imgName, newMessage, modifiedImage3)   
             if (success):
                 tellUser("First Image Saved successfully", labelUpdates)
@@ -2193,7 +2193,7 @@ def executeThresholdingChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Segmented_Individual_Images"
-            newMessage = "Otsu_Thresholding_"
+            newMessage = "OtsuThresholding_"
             success = saveFile(destinationFolder, imgName, newMessage, th3)   
             if (success):
                 tellUser("Image Saved successfully", labelUpdates)
@@ -2286,14 +2286,14 @@ def executeImageTransformationChoice(intVal, img, imgName, show):
             # save image
             destinationFolder = "Transformed_Individual_Images"
 
-            newMessage = "Low_Pass_Filter_"
+            newMessage = "LowPassFilter_"
             success = saveFile(destinationFolder, imgName, newMessage, img_back_low_pass)   
             if (success):
                 tellUser("First Image Saved successfully", labelUpdates)
             else:
                 tellUser("Unable to Save File...", labelUpdates)
 
-            newMessage = "High_Pass_Filter_"
+            newMessage = "HighPassFilter_"
             success = saveFile(destinationFolder, imgName, newMessage, img_back_high_pass)   
             if (success):
                 tellUser("Second Image Saved successfully", labelUpdates)
@@ -2337,7 +2337,7 @@ def executeImageTransformationChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Transformed_Individual_Images"
-            newMessage = "DCT_Transformed_"
+            newMessage = "DCTTransformed_"
             success = saveFile(destinationFolder, imgName, newMessage, idct_img)   
             if (success):
                 tellUser("First Image Saved successfully", labelUpdates)
@@ -2429,7 +2429,7 @@ def executeCompressionChoice(intVal, img, imgName, show):
         else:
             # save image
             destinationFolder = "Compressed_Individual_Images"
-            newMessage = "DCT_Compressed_"
+            newMessage = "DCTCompressed_"
             success = saveFile(destinationFolder, imgName, newMessage, img_idct)   
             if (success):
                 tellUser("Image Saved successfully", labelUpdates)
