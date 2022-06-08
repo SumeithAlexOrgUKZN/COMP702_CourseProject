@@ -2458,7 +2458,7 @@ def chooseFeatures():
 
     window.filename = openGUI("Select an Image...")
 
-    success, imgGrayscale= imgToGrayscale(window.filename)
+    success, imgGrayscale= imageToColourRGB(window.filename)
 
     if (success):
         featureWindow = Toplevel(window)
@@ -2477,10 +2477,10 @@ def chooseFeatures():
             command=lambda: executeFeatureChoice(intVal=featureOption.get(), img=imgGrayscale, imgName=window.filename, show=False)
         ).pack(anchor=W, side="top")
         Button(featureWindow, text="Close Plots", width=50, bg='gray',
-            command=lambda: ( plt.close("Compression Changes") )
+            command=lambda: ( plt.close("Feature Extractions") )
         ).pack(anchor=W, side="top")
     else:
-        tellUser("Unable to Get Grayscale Image for Feature Window...", labelUpdates)
+        tellUser("Unable to Get Colour Image for Feature Window...", labelUpdates)
 ###
 
 def executeFeatureChoice(intVal, img, imgName, show):
@@ -2495,12 +2495,12 @@ def executeFeatureChoice(intVal, img, imgName, show):
 
         # matplotlib uses RGB, so we must read it in with matplotlib.
         # opencv uses BGR...
-        matplotlibImage = plt.imread(imgName)
+        matplotlibImage = img
 
         numRows = 2; numColumns = 4
 
-        imgArray = [matplotlibImage, matplotlibImage[ : ,  : , 0], matplotlibImage[ : ,  : , 1], matplotlibImage[ : ,  : , 2], 
-                    matplotlibImage, matplotlibImage[ : ,  : , 0], matplotlibImage[ : ,  : , 1], matplotlibImage[ : ,  : , 2] ]
+        imgArray = [matplotlibImage, getRedChannel(matplotlibImage), getGreenChannel(matplotlibImage), getBlueChannel(matplotlibImage), 
+                    matplotlibImage, getRedChannel(matplotlibImage), getGreenChannel(matplotlibImage), getBlueChannel(matplotlibImage) ]
         labelArray = ["Original", "Red Channel as red", "Green Channel as green", "Blue Channel as blue", 
                       "Original", "Red Channel as gray", "Green Channel as gray", "Blue Channel as gray"]
         colourArray = ["gray", "Reds", "Greens", "Blues", "gray", "gray", "gray", "gray"]
@@ -2518,6 +2518,57 @@ def executeFeatureChoice(intVal, img, imgName, show):
     else:
         # should never execute
         tellUser("Select an option...", labelUpdates)
+###
+
+def getRedChannel(matplotlibImage):
+    return matplotlibImage[ : ,  : , 0]
+##
+
+def getGreenChannel(matplotlibImage):
+    return matplotlibImage[ : ,  : , 1]
+##
+
+def getBlueChannel(matplotlibImage):
+    return matplotlibImage[ : ,  : , 2]
+##
+
+def imageToColourBGR(name):
+    try:
+        if name.endswith(".gif"):
+            success, image = getGIF(name)
+        elif name.endswith(".raw"):
+            success, image = getRAW(name)
+        else:
+            success, image = True, cv2.imread(name, cv2.IMREAD_COLOR)
+
+        if (success):
+            return True, image
+        else:
+            return False, NoneType
+
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
+###
+
+def imageToColourRGB(name):
+    try:
+        # convert, save. Then read, delete
+        success, temp = imageToColourBGR(name)
+        if (success):
+            print("Working:")
+            cv2.imwrite("temp.jpg", temp)
+            image = plt.imread("temp.jpg")
+            remove("temp.jpg")
+
+        else:
+            return False, NoneType
+
+        return True, image
+
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
@@ -2553,6 +2604,11 @@ def getFileName(path):
     if (backslashLocation == -1):
         backslashLocation = path.rfind("\\")
     return path[ backslashLocation + 1 : ]
+###
+
+def getImageName(path):
+    fullstopLocation = path.rfind(".")
+    return path[ : fullstopLocation ]
 ###
 
 # allows for any number of images to be placed in a grid
@@ -2606,12 +2662,13 @@ def saveColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, 
         plt.axis('off') #Removes axes
 
     plt.tight_layout()
-    plt.savefig(destinationFolder + "\\" + fileName)
+    # matplotlib cannot save as some file types, so always save as jpg
+    plt.savefig(destinationFolder + "\\" + getImageName(fileName) + ".jpg")
 
     from os.path import exists
 
     # see if successful
-    if (exists(folderName + "\\" + fileName)):
+    if (exists(folderName + "\\" + getImageName(fileName) + ".jpg")):
         return True
     else:
         return False
@@ -2631,11 +2688,8 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
         print("New Error:", uhoh)
         pass
     
-    location = destinationFolder + "\\" + imgNameToAppend + getFileName(imgPath)
-
+    location = destinationFolder + "\\" + imgNameToAppend +  getImageName(getFileName(imgPath)) + ".jpg"
     # all converted images need to be jpg (incase .raw / .gif come up - for consistency)
-    fullstop = location.rfind(".")
-    location = location[ : fullstop] + ".jpg"
 
     success = cv2.imwrite(location, image) # True or False
     return success
