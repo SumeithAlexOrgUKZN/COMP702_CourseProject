@@ -208,10 +208,11 @@ def chooseExperimentMethod():
     )
     button17 = tk.Button(
         master = buttonFrameBottom2,
-        text = "17",
+        text = "Calculate Features",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseFeatures
     )
     buttonClose = tk.Button(
         master = buttonFrameBottom2,
@@ -2447,6 +2448,50 @@ def dct2(a):
 
 def idct2(a):
     return idct( idct( a, axis=0 , norm='ortho'), axis=1 , norm='ortho')
+###
+
+#------------------------------------------------------------------------------------Feature Extraction Functions Below---------
+
+def chooseFeatures():
+    # print("Inside chooseFeatures()")
+
+    window.filename = openGUI("Select an Image...")
+
+    success, imgGrayscale= imgToGrayscale(window.filename)
+
+    if (success):
+        featureWindow = Toplevel(window)
+        featureWindow.title("Choose a kind of Feature Extraction...")
+        featureWindow.geometry("300x300")
+
+        featureOption = IntVar()
+        featureOption.set(0)
+
+        Radiobutton(featureWindow, text="Global Color Feature Extraction", variable=featureOption, value=1, width=30).pack(anchor=W, side="top")
+
+        Button(featureWindow, text="Get Features and Show", width=50, bg='gray',
+            command=lambda: executeFeatureChoice(intVal=featureOption.get(), img=imgGrayscale, imgName=window.filename, show=True)
+        ).pack(anchor=W, side="top")
+        Button(featureWindow, text="Get Features and Save", width=50, bg='gray',
+            command=lambda: executeFeatureChoice(intVal=featureOption.get(), img=imgGrayscale, imgName=window.filename, show=False)
+        ).pack(anchor=W, side="top")
+        Button(featureWindow, text="Close Plots", width=50, bg='gray',
+            command=lambda: ( plt.close("Compression Changes") )
+        ).pack(anchor=W, side="top")
+    else:
+        tellUser("Unable to Get Grayscale Image for Feature Window...", labelUpdates)
+###
+
+def executeFeatureChoice(intVal, img, imgName, show):
+    print("Inside executeFeatureChoice()")
+
+    if (intVal == 1):
+        # global color feature extraction
+        print("Option 1")
+
+    else:
+        # should never execute
+        tellUser("Select an option...", labelUpdates)
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
