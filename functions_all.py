@@ -20,6 +20,7 @@ from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 import cv2
 
 from matplotlib import pyplot as plt
+import matplotlib
 
 import numpy as np
 from numpy import r_ # used in DCT compression
@@ -2483,11 +2484,36 @@ def chooseFeatures():
 ###
 
 def executeFeatureChoice(intVal, img, imgName, show):
-    print("Inside executeFeatureChoice()")
+    # print("Inside executeFeatureChoice()")
+    fig = plt.figure(num="Feature Extractions", figsize=(15, 6))
+    plt.clf() # Should clear last plot but keep window open? 
+
+    numRows = 1; numColumns = 2
 
     if (intVal == 1):
         # global color feature extraction
-        print("Option 1")
+
+        # matplotlib uses RGB, so we must read it in with matplotlib.
+        # opencv uses BGR...
+        matplotlibImage = plt.imread(imgName)
+
+        numRows = 2; numColumns = 4
+
+        imgArray = [matplotlibImage, matplotlibImage[ : ,  : , 0], matplotlibImage[ : ,  : , 1], matplotlibImage[ : ,  : , 2], 
+                    matplotlibImage, matplotlibImage[ : ,  : , 0], matplotlibImage[ : ,  : , 1], matplotlibImage[ : ,  : , 2] ]
+        labelArray = ["Original", "Red Channel as red", "Green Channel as green", "Blue Channel as blue", 
+                      "Original", "Red Channel as gray", "Green Channel as gray", "Blue Channel as gray"]
+        colourArray = ["gray", "Reds", "Greens", "Blues", "gray", "gray", "gray", "gray"]
+
+        if (show):
+            plotColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns)
+        else:
+            success = saveColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns, 
+                                        "Features_Individual_Images", "ColourMapsOf_" + getFileName(imgName))
+            if (success):
+                tellUser("Image Saved successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save File...", labelUpdates)
 
     else:
         # should never execute
@@ -2541,6 +2567,54 @@ def plotImagesSideBySide(fig, imgArray, labelArray, numRows, numColumns):
     plt.show()
 
     tellUser("Changes displayed...", labelUpdates)
+###
+
+# allows for any number of images to be placed in a grid, with individual colour mappings
+# it is ideal to read the images via matplotlib though, as Opencv does BGR, Matplotlib does RGB
+def plotColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns):
+    for i in range(len(imgArray)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.imshow(imgArray[i], cmap=colourArray[i])
+        plt.title(labelArray[i], wrap=True)
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    plt.show()
+###
+
+# allows for any number of images to be placed in a grid, with individual colour mappings
+# it is ideal to read the images via matplotlib though, as Opencv does BGR, Matplotlib does RGB
+def saveColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns, folderName, fileName):
+
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + folderName
+
+     # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+    
+    # create plot
+    for i in range(len(imgArray)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.imshow(imgArray[i], cmap=colourArray[i])
+        plt.title(labelArray[i], wrap=True)
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    plt.savefig(destinationFolder + "\\" + fileName)
+
+    from os.path import exists
+
+    # see if successful
+    if (exists(folderName + "\\" + fileName)):
+        return True
+    else:
+        return False
 ###
 
 def saveFile(folder, imgPath, imgNameToAppend, image):
