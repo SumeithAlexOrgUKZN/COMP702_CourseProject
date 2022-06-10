@@ -37,6 +37,7 @@ from scipy.ndimage import binary_fill_holes #region filling
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
 from types import NoneType
+from os.path import exists
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -2556,7 +2557,7 @@ def imageToColourRGB(name):
         # convert, save. Then read, delete
         success, temp = imageToColourBGR(name)
         if (success):
-            print("Working:")
+            # print("Working:")
             cv2.imwrite("temp.jpg", temp)
             image = plt.imread("temp.jpg")
             remove("temp.jpg")
@@ -2665,7 +2666,7 @@ def saveColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, 
     # matplotlib cannot save as some file types, so always save as jpg
     plt.savefig(destinationFolder + "\\" + getImageName(fileName) + ".jpg")
 
-    from os.path import exists
+    
 
     # see if successful
     if (exists(folderName + "\\" + getImageName(fileName) + ".jpg")):
