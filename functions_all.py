@@ -2528,10 +2528,13 @@ def executeFeatureChoice(intVal, show):
                 folderName = "Resized_Notes_DataSet"
                 array = getClustersOfImages(folderName)
                 save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
-                
+            
+            success = saveColourTrends()
+            if(success):
                 tellUser("File Saved Successfully", labelUpdates)
             else:
-                tellUser("File Already Exists!", labelUpdates)
+                tellUser("Unable to Save...", labelUpdates)
+
 
     else:
         # should never execute
@@ -2629,6 +2632,7 @@ def getColourInfo(img):
 
     return answer
 ###
+
 '''
     Assume that the folderName exists and contains 55 different
     bills.
@@ -2792,6 +2796,9 @@ def getColourTrends():
     return answerArray
 ###
 
+'''
+    Opens and shows all_resized_pictures_colour_features.txt to user
+'''
 def displayColourTrends():
     array = getColourTrends()
 
@@ -2805,6 +2812,45 @@ def displayColourTrends():
 
                 print(temp[0], ": ", temp[1], ", Variation: ", temp[2], sep="")
         print()
+###
+
+def saveColourTrends():
+    # print()
+    folderName = "Reference_Materials"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + folderName
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    array = getColourTrends()
+
+    rowString = ""
+    for a in range(len(array)):
+        rowString += str(array[a][0]) + "\n" # print "R10", etc.
+        for b in range(1, len(array[0])):
+            for c in range(0, len(array[0][1])):
+                temp =array[a][b][c]
+                rowString += str(temp[0]) + " " + str(temp[1]) + " " + str(temp[2]) + "\n"
+
+        # rowString += "\n"
+
+    fileName = "colour_trends.txt"
+    file = open(destinationFolder + "\\" + fileName, "w+")
+    file.write(rowString[ : -1]) # ignore last char
+    file.close()
+
+    # see if successful
+    if (exists(destinationFolder + "\\" + fileName)):
+        return True
+    else:
+        return False
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
