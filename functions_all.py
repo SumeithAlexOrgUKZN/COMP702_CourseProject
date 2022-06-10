@@ -2509,7 +2509,7 @@ def executeFeatureChoice(intVal, show):
                 plotColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns)
             else:
                 success = saveColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns, 
-                                            "Features_Individual_Images", "ColourMapsOf_" + getFileName(imgName))
+                                            "Features_Individual_Images", "ColourMapsOf_" + getFileName(window.filename))
                 if (success):
                     tellUser("Image Saved successfully", labelUpdates)
                 else:
