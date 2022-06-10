@@ -35,7 +35,7 @@ from scipy.ndimage import binary_fill_holes #region filling
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
-from types import NoneType
+#from types import NoneType
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -187,10 +187,11 @@ def chooseExperimentMethod():
     )
     button14 = tk.Button(
         master = buttonFrameBottom1,
-        text = "14",
+        text = "Bulk change (Messup images)",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = conductBulkMessUP
     )
     button15 = tk.Button(
         master = buttonFrameBottom1,
@@ -2448,7 +2449,41 @@ def dct2(a):
 def idct2(a):
     return idct( idct( a, axis=0 , norm='ortho'), axis=1 , norm='ortho')
 ###
+#------------------------------------------------------------------------------------Malice Functions---------------------------
+def conductBulkMessUP():
+    currentDir = getcwd()
+    folder = "Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+    destinationFolder = currentDir + "\\Resized_Notes_DataSet"
 
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_UNCHANGED)
+
+            messedUp = cv2.resize(image, (y, x)) # note order
+            # cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
+            success = saveFile(folder="Malice_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="Malice_", image=resizedImage)
+
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures messed up Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are messsed...", labelUpdates)
+
+def malice():
+    return
+
+def brightenImage(img):
+    return img
 #------------------------------------------------------------------------------------Other Functions Below----------------------
 
 # places updated label for user
