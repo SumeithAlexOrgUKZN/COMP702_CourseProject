@@ -223,7 +223,6 @@ def displayColourTrends():
 
                 print(temp[0], ": ", temp[1], ", Variation: ", temp[2], sep="")
         print()
-
 ###
 
 # file1 = "Notes_DataSet\\010_back_current_1.png"
