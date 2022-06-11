@@ -214,6 +214,13 @@ def chooseExperimentMethod():
         height = 5, 
         bg = "silver",
     )
+    button18 = tk.Button(
+        master = buttonFrameBottom2,
+        text = "18",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
     buttonClose = tk.Button(
         master = buttonFrameBottom2,
         text = "Exit the Program",
@@ -230,7 +237,7 @@ def chooseExperimentMethod():
     button5.pack(side = tk.LEFT); button6.pack(side = tk.LEFT); button7.pack(side = tk.LEFT); button8.pack(side = tk.RIGHT)
     button9.pack(side = tk.LEFT); button10.pack(side = tk.LEFT); button11.pack(side = tk.LEFT); button12.pack(side = tk.RIGHT)
     button13.pack(side = tk.LEFT); button14.pack(side = tk.LEFT); button15.pack(side = tk.LEFT); button16.pack(side = tk.RIGHT)
-    button17.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
+    button17.pack(side = tk.LEFT); button18.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
 ###
 
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
