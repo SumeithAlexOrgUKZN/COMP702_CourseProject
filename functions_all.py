@@ -39,7 +39,7 @@ from skimage.util import random_noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
-#from types import NoneType
+from types import NoneType
  
 import random
 
@@ -2511,35 +2511,43 @@ def rdnMessup(img):
     if rdnOption == 0:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
-        tempImage = growImage(tempImage, rdnScale)
+        #tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 1:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
-        tempImage = growImage(tempImage, rdnScale)
+        #tempImage = shrinkImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 2:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
-        tempImage = growImage(tempImage, rdnScale)
+        #tempImage = addNoise(tempImage, rdnNoise)
         tempImage = rotateImage(tempImage, rdnAngle)
-
+    
     if rdnOption == 3:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        #tempImage = addNoise(tempImage, rdnNoise)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 4:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
-        #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = rotateImage(tempImage, rdnAngle)
 
     if rdnOption == 5:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        tempImage = rotateImage(tempImage, rdnAngle)
+
+    if rdnOption == 6:
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
     
-    if rdnOption == 6:
+    if rdnOption == 7:
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
-        tempImage = rotateImage(tempImage, rdnAngle)
+    
+
+
     return tempImage
 ###
 
