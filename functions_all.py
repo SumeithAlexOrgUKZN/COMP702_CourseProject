@@ -22,7 +22,8 @@ import cv2
 from matplotlib import pyplot as plt
 
 import numpy as np
-from numpy import r_ # used in DCT compression
+from numpy import r_
+from scipy.ndimage.interpolation import rotate # used in DCT compression
 
 from skimage.segmentation import felzenszwalb # type of segmentation method
 from skimage.feature import canny #region filling
@@ -34,6 +35,7 @@ from scipy import fft # used for dct transform
 from scipy.fftpack import dct, idct # used for Compression
 from scipy.ndimage import binary_fill_holes #region filling
 from scipy.ndimage import rotate
+from skimage.util import random_noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
@@ -41,7 +43,6 @@ from os import getcwd, walk, mkdir, remove
  
 import random
 
-from PIL import Image, ImageEnhance
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
 # Global Vars below
@@ -2464,7 +2465,7 @@ def idct2(a):
 #------------------------------------------------------------------------------------Messing Functions---------------------------
 def conductBulkMessUP():
     currentDir = getcwd()
-    folder = "Resized_Notes_DataSet"
+    folder = "Notes_DataSet"
     path = walk(currentDir + "\\" + folder)
     destinationFolder = currentDir + "\\MessedUp_Notes_DataSet"
 
@@ -2496,11 +2497,13 @@ def rdnMessup(img):
     tempImage = img
     noiseList = ["gaussian", "s&p", "poisson", "speckle"]
     lightIntensityList = [30, 40, 50, 60, 70 ,80, 90, 100, 110]
-    angleList = [45.0, 135.0, 180.0, 225.0, 315.0]
+    scaleList = range(5,95, 5)
+    angleList = range(5,360, 5)
 
     rdnNoise = random.choice(noiseList)
     rdnAngle = random.choice(angleList)
     rdnLightIntensiry = random.choice(lightIntensityList)
+    rdnScale = random.choice(scaleList)
     rdnOption = random.randint(0,6)
     
     lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * (rdnLightIntensiry)
@@ -2508,34 +2511,35 @@ def rdnMessup(img):
     if rdnOption == 0:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 1:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
-    """
     if rdnOption == 2:
-        #tempImage = brightenImage(tempImage, lightIntensityMatrix)
-        #tempImage = rotateImage(tempImage, rdnAngle)
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        tempImage = growImage(tempImage, rdnScale)
+        tempImage = rotateImage(tempImage, rdnAngle)
 
     if rdnOption == 3:
-        #tempImage = darkenImage(tempImage, lightIntensityMatrix)
-        #tempImage = rotateImage(tempImage, rdnNoise)
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 4:
-        #tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
 
     if rdnOption == 5:
-        #tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
         #tempImage = addNoise(tempImage, rdnNoise)
     
     if rdnOption == 6:
         #tempImage = addNoise(tempImage, rdnNoise)
-        #tempImage = rotateImage(tempImage, rdnAngle)
-    """
+        tempImage = rotateImage(tempImage, rdnAngle)
     return tempImage
 ###
 
@@ -2555,56 +2559,36 @@ def darkenImage(img, lightIntensityMatrix):
 
 def addNoise(noise_typ, img):
     temp = img
-    if noise_typ == "gauss":
-        row,col,ch= temp.shape
-        mean = 0
-        var = 0.1
-        sigma = var**0.5
-        gauss = np.random.normal(mean,sigma,(row,col,ch))
-        gauss = gauss.reshape(row,col,ch)
-        noisy = temp + gauss
-        return noisy
-
-    elif noise_typ == "s&p":
-        row,col,ch = temp.shape
-        s_vs_p = 0.5
-        amount = 0.004
-        out = np.copy(temp)
-
-        # Salt
-        num_salt = np.ceil(amount * temp.size * s_vs_p)
-        coords = [np.random.randint(0, i - 1, int(num_salt)) for i in temp.shape]
-        out[coords] = 1
-            
-        # Pepper
-        num_pepper = np.ceil(amount* temp.size * (1. - s_vs_p))
-        coords = [np.random.randint(0, i - 1, int(num_pepper)) for i in temp.shape]
-        out[coords] = 0
-        return out
-
-    elif noise_typ == "poisson":
-        vals = len(np.unique(temp))
-        vals = 2 ** np.ceil(np.log2(vals))
-        noisy = np.random.poisson(temp * vals) / float(vals)
-        return noisy
-    
-    elif noise_typ =="speckle":
-        row,col,ch = temp.shape
-        gauss = np.random.randn(row,col,ch)
-        gauss = gauss.reshape(row,col,ch)        
-        noisy = temp + temp * gauss
-        return noisy
+    noise_img = random_noise(temp, mode=noise_typ, amount=0.3)
+    noise_img = np.array(255*noise_img, dtype = 'uint8')
+    return noise_img
 ###
+
+def growImage(img, scale):
+    temp = img 
+
+    width = int(img.shape[1] * scale)
+    height = int(img.shape[0] * scale)
+
+    dsize = (width, height)
+
+    grewImage = cv2.resize(temp, dsize)
+    return grewImage
+
+def shrinkImage(img, lightIntensityMatrix):
+    temp = img 
+
+    width = int(img.shape[1] * scale / 100)
+    height = int(img.shape[0] * scale / 100)
+
+    dsize = (width, height)
+
+    grewImage = cv2.resize(temp, dsize)
+    return grewImage
 
 def rotateImage(img, angle):
     # Rotate an Image
-    temp = img
-    (h, w) = temp.shape[:2]
-    center = (w / 2, h / 2)
-    scale = 1
-    M = cv2.getRotationMatrix2D(center, angle, scale)
-    rotated = cv2.warpAffine(temp, M, (w, h))
-
+    rotated = rotate(img, angle)
     return rotated
 ###
 
