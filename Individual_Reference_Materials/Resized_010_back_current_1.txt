@@ -1,0 +1,3 @@
+Red Average Red Mode 138.07722663879395 204 
+Green Average Green Mode 149.43625450134277 219 
+Blue Average Blue Mode 179.0382537841797 212

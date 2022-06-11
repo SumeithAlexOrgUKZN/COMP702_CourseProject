@@ -2745,8 +2745,9 @@ def chooseFeatures():
     featureOption = IntVar()
     featureOption.set(0)
 
-    Radiobutton(featureWindow, text="Individual Color Feature Extraction", variable=featureOption, value=1, width=30).pack(anchor=W, side="top")
-    Radiobutton(featureWindow, text="Show Bulk Color Feature Extraction", variable=featureOption, value=2, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Individual Color Channels", variable=featureOption, value=1, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Individual Color Features", variable=featureOption, value=2, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Show Bulk Color Feature Extraction", variable=featureOption, value=3, width=30).pack(anchor=W, side="top")
 
     Button(featureWindow, text="Get Features and Show", width=50, bg='gray',
         command=lambda: executeFeatureChoice(intVal=featureOption.get(), show=True)
@@ -2799,6 +2800,56 @@ def executeFeatureChoice(intVal, show):
             tellUser("Unable to Get Colour Image for Feature Window...", labelUpdates)
     
     elif (intVal == 2):
+        # individual colour features
+        window.filename = openGUI("Select an Image...")
+
+        success, img= imageToColourRGB(window.filename)
+        if (success):
+            colour_info = getColourInfo(img) # returns a 3D list
+
+            if (show):
+                plotMask(fig, img, colour_info, window.filename, "Colour Features ")
+
+                plt.show()
+            else:
+                 # create directory
+                currentDirectory = getcwd()
+                destinationFolder = currentDirectory + "\\" + "Individual_Reference_Materials"
+                try:
+                    mkdir(destinationFolder)
+                except FileExistsError as uhoh:
+                    pass
+                except Exception as uhoh:
+                    print("New Error:", uhoh)
+                    pass
+                
+                fileName = getImageName(getFileName(window.filename)) + ".txt"
+                rowString = ""
+
+                for i in range(len(colour_info)):
+                    for j in range(len(colour_info[0])):
+                        for k in range(len(colour_info[0][0])):
+                            rowString += str(colour_info[i][j][k]) + " "
+                    rowString += "\n"
+
+                # print(destinationFolder, ":::", destinationFolder + "\\" + fileName)
+
+                file = open(destinationFolder + "\\" + fileName, "w+")
+                file.write(rowString[ : -2]) # ignore last 2 chars
+                file.close()
+
+                 # check if desiredFile exists
+                desiredFile = destinationFolder + "\\" + fileName
+                if ( not exists(desiredFile) ):
+                    tellUser("Unable to save file...", labelUpdates)
+                else:
+                    tellUser("Saved Successfully!", labelUpdates)
+
+        
+        else:
+            tellUser("Unable to get Colour Image for Colour features...", labelUpdates)
+
+    elif (intVal == 3):
         # display reference info
         if (show):
             displayColourTrends()
