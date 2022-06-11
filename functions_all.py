@@ -2511,23 +2511,25 @@ def rdnMessup(img):
     if rdnOption == 0:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
-        #tempImage = growImage(tempImage, rdnScale)
+        tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 1:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
-        #tempImage = shrinkImage(tempImage, rdnScale)
+        tempImage = shrinkImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 2:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = shrinkImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 3:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 4:
