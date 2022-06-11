@@ -23,21 +23,28 @@ from matplotlib import pyplot as plt
 import matplotlib
 
 import numpy as np
-from numpy import r_ # used in DCT compression
+from numpy import r_
+from scipy.ndimage.interpolation import rotate # used in DCT compression
 
 from skimage.segmentation import felzenszwalb # type of segmentation method
 from skimage.feature import canny #region filling
+from skimage.util import random_noise # several noise options
 
 from mahotas import haar # used for haar transform
 
 from scipy import fft # used for dct transform
 from scipy.fftpack import dct, idct # used for Compression
 from scipy.ndimage import binary_fill_holes #region filling
+from scipy.ndimage import rotate #used to rotate an image
+from skimage.util import random_noise # used for to inject random noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
 from types import NoneType
+
 from os.path import exists
+import random
+
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -93,11 +100,11 @@ def chooseExperimentMethod():
     )
     button2= tk.Button(
         master = buttonFrameTop,
-        text = "Bulk Changes (Resize)",
+        text = "Conduct Bulk Changes",
         width = 40,
         height = 5, 
         bg = "silver",
-        command = conductBulkResize
+        command = chooseBulkChanges
     )
     button3 = tk.Button(
         master = buttonFrameTop,
@@ -216,6 +223,13 @@ def chooseExperimentMethod():
         bg = "silver",
         command = chooseFeatures
     )
+    button18 = tk.Button(
+        master = buttonFrameBottom2,
+        text = "18",
+        width = 40,
+        height = 5, 
+        bg = "silver",
+    )
     buttonClose = tk.Button(
         master = buttonFrameBottom2,
         text = "Exit the Program",
@@ -232,7 +246,7 @@ def chooseExperimentMethod():
     button5.pack(side = tk.LEFT); button6.pack(side = tk.LEFT); button7.pack(side = tk.LEFT); button8.pack(side = tk.RIGHT)
     button9.pack(side = tk.LEFT); button10.pack(side = tk.LEFT); button11.pack(side = tk.LEFT); button12.pack(side = tk.RIGHT)
     button13.pack(side = tk.LEFT); button14.pack(side = tk.LEFT); button15.pack(side = tk.LEFT); button16.pack(side = tk.RIGHT)
-    button17.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
+    button17.pack(side = tk.LEFT); button18.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
 ###
 
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
@@ -2450,6 +2464,273 @@ def dct2(a):
 
 def idct2(a):
     return idct( idct( a, axis=0 , norm='ortho'), axis=1 , norm='ortho')
+###
+#------------------------------------------------------------------------------------Messing Functions---------------------------
+def conductBulkMessUP():
+    currentDir = getcwd()
+    folder = "Resized_Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+    destinationFolder = currentDir + "\\MessedUp_Notes_DataSet"
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_UNCHANGED)
+
+            messedUp = rdnMessup(image)
+            # cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
+            success = saveFile(folder="MessedUp_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="MessedUp_", image=messedUp)
+
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures messed up Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are messsed...", labelUpdates)
+###
+
+def rdnMessup(img):
+    tempImage = img
+    noiseList = ["gaussian", "s&p", "poisson", "speckle"]
+    lightIntensityList = [30, 40, 50, 60, 70 ,80, 90, 100, 110]
+    # scaleList = range(5, 10, 5) # (manipulate size by factor 5% -- 10%) # removed because takes too long
+    angleList = range(5, 360, 5)
+
+    rdnNoise = random.choice(noiseList)
+    rdnAngle = random.choice(angleList)
+    rdnLightIntensiry = random.choice(lightIntensityList)
+    # rdnScale = random.choice(scaleList)
+    rdnOption = random.randint(0,6)
+    
+    lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * (rdnLightIntensiry)
+    
+    if rdnOption == 0:
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        tempImage = addNoise(tempImage, rdnNoise)
+        # tempImage = growImage(tempImage, rdnScale)
+        tempImage = rotateImage(tempImage, rdnAngle)
+    
+    if rdnOption == 1:
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        tempImage = addNoise(tempImage, rdnNoise)
+        # tempImage = shrinkImage(tempImage, rdnScale)
+        tempImage = rotateImage(tempImage, rdnAngle)
+    
+    if rdnOption == 2:
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        tempImage = addNoise(tempImage, rdnNoise)
+        # tempImage = shrinkImage(tempImage, rdnScale)
+        tempImage = rotateImage(tempImage, rdnAngle)
+    
+    if rdnOption == 3:
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        tempImage = addNoise(tempImage, rdnNoise)
+        # tempImage = growImage(tempImage, rdnScale)
+        tempImage = rotateImage(tempImage, rdnAngle)
+    
+    if rdnOption == 4:
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        tempImage = rotateImage(tempImage, rdnAngle)
+
+    if rdnOption == 5:
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        tempImage = rotateImage(tempImage, rdnAngle)
+
+    if rdnOption == 6:
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        tempImage = addNoise(tempImage, rdnNoise)
+    
+    if rdnOption == 7:
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        tempImage = addNoise(tempImage, rdnNoise)
+    
+
+
+    return tempImage
+###
+
+
+def brightenImage(img, lightIntensityMatrix):
+    temp = img
+    temp = cv2.add(img, lightIntensityMatrix)
+    return temp
+###
+
+
+def darkenImage(img, lightIntensityMatrix):
+    temp = img
+    temp = cv2.subtract(img, lightIntensityMatrix)
+    return temp
+###
+
+def addNoise(img, noise_typ):
+    temp = img
+    noise_img = random_noise(temp, mode=noise_typ)
+    noise_img = np.array(255*noise_img, dtype = 'uint8')
+    return noise_img
+###
+
+def growImage(img, scale):
+    temp = img 
+
+    width = int(img.shape[1] * scale)
+    height = int(img.shape[0] * scale)
+
+    grewImage = cv2.resize(temp, (width, height))
+    return grewImage
+
+def shrinkImage(img, scale):
+    temp = img 
+
+    width = int(img.shape[1] * scale / 100)
+    height = int(img.shape[0] * scale / 100)
+
+    grewImage = cv2.resize(temp, (width, height))
+    return grewImage
+
+def rotateImage(img, angle):
+    # Rotate an Image
+    rotated = rotate(img, angle)
+    return rotated
+###
+
+def chooseNoise():
+    window.filename = openGUI("Select an Image to Noise to")
+    success, img= getImage(window.filename)
+
+    if (success):
+        # Open new window to choose enhancement
+        noiseWindow = Toplevel(window)
+        noiseWindow.title("Choose a noise...")
+        noiseWindow.geometry("300x400")
+
+        noiseOption = IntVar()
+        noiseOption.set(0)
+
+        Radiobutton(noiseWindow, text="Gaussian Noise", variable=noiseOption, value=1).pack(anchor=W, side="top")
+        Radiobutton(noiseWindow, text="Salt and Pepper Noise", variable=noiseOption, value=2).pack(anchor=W, side="top")
+        Radiobutton(noiseWindow, text="Poisson Noise", variable=noiseOption, value=3).pack(anchor=W, side="top")
+        Radiobutton(noiseWindow, text="Speckle Noise", variable=noiseOption, value=4).pack(anchor=W, side="top")
+
+        Button(noiseWindow, text="Apply Noise and Show", width=35, bg='gray',
+            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=True) 
+        ).pack()
+        Button(noiseWindow, text="Apply Noise and Save", width=35, bg='gray',
+            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=False) 
+        ).pack()
+        Button(noiseWindow, text="Close Plots", width=35, bg='gray',
+            command=lambda: (plt.close("Noise Changes"))
+        ).pack()
+
+    else:
+        tellUser("Unable to Get Image to add Noise...", labelUpdates)
+    
+    return True
+###
+
+
+def executeNoiseOption(intVal, img, imgName, show):
+
+    fig = plt.figure(num="Noise Changes", figsize=(8, 4))
+    plt.clf() # Should clear last plot but keep window open? 
+
+    newImg = [[]]
+    newMessage = ""
+
+    # 4 options
+    if (intVal == 1):
+        # Gaussian Noise
+        newImg = addNoise("gaussian", img)
+        newMessage = "GaussianNoise_"
+
+    elif (intVal == 2):
+        # Salt and Pepper Noise
+        newImg = addNoise(img)
+        newMessage = "SaltAndPepperNoise_"
+
+    elif (intVal == 3):
+        # Poisson Noise
+        newImg = addNoise(img)
+        newMessage = "PoissonNoise_"
+
+    elif (intVal == 4):
+        # Speckle Noise
+        newImg = addNoise(img)
+        newMessage = "SpeckleNoise_"
+        
+    else:
+        tellUser("Select an option...", labelUpdates)
+ 
+    if (show):
+        fig.add_subplot(1, 3, 1)
+
+        plt.imshow(img)
+        plt.title('Original Image of '+ getFileName(imgName), wrap=True)
+
+        plotMask(fig, newImg, imgName, newMessage)
+
+        plt.tight_layout() # Prevents title overlap in display
+        plt.show()  
+    else:
+        # save image
+        destinationFolder = "Masked_Individual_Images"
+        success = saveFile(destinationFolder, imgName, newMessage, newImg)   
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
+###
+
+
+# def plotNoise(fig, newImg, imgName, newMessage, mask):
+#     fig.add_subplot(1, 3, 2)
+#     plt.imshow(newImg, cmap='gray')
+#     plt.title(newMessage + "of_" + getFileName(imgName), wrap=True)
+#     plt.axis('off') #Removes axes
+
+#     fig.add_subplot(1, 3, 3)
+#     plt.text(0.3, 0.7, "Mask")
+#     plt.table(cellText=mask, loc='center')
+#     plt.axis('off') #Removes axes
+# ###
+
+#------------------------------------------------------------------------------------Bulk Changes Below-------------------------
+
+def chooseBulkChanges():
+    # Open new window to choose enhancement
+    bulkWindow = Toplevel(window)
+    bulkWindow.title("Choose a king of Bulk Change...")
+    bulkWindow.geometry("300x400")
+
+    bulkOption = IntVar()
+    bulkOption.set(0)
+
+    Radiobutton(bulkWindow, text="Bulk Resize", variable=bulkOption, value=1).pack(anchor=W, side="top")
+    Radiobutton(bulkWindow, text="Bulk Mess Up", variable=bulkOption, value=2).pack(anchor=W, side="top")
+
+    Button(bulkWindow, text="Apply Bulk Changes", width=35, bg='gray',
+        command=lambda: executeBulkOption(intVal=bulkOption.get()) 
+    ).pack()
+###
+
+def executeBulkOption(intVal):
+    if (intVal == 1):
+        # Bulk Resize
+        conductBulkResize()
+
+    elif (intVal == 2):
+        # Bulk Mess Up
+        conductBulkMessUP()
+
+    else:
+        tellUser("Please select an option...", labelUpdates)
 ###
 
 #------------------------------------------------------------------------------------Feature Extraction Functions Below---------
