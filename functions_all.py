@@ -39,7 +39,7 @@ from skimage.util import random_noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
-from types import NoneType
+#from types import NoneType
  
 import random
 
@@ -2510,24 +2510,24 @@ def rdnMessup(img):
     
     if rdnOption == 0:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
-        #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = addNoise(tempImage, rdnNoise)
         #tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 1:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
-        #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = addNoise(tempImage, rdnNoise)
         #tempImage = shrinkImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 2:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
-        #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = addNoise(tempImage, rdnNoise)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 3:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
-        #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = addNoise(tempImage, rdnNoise)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 4:
@@ -2540,11 +2540,11 @@ def rdnMessup(img):
 
     if rdnOption == 6:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
-        #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = addNoise(tempImage, rdnNoise)
     
     if rdnOption == 7:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
-        #tempImage = addNoise(tempImage, rdnNoise)
+        tempImage = addNoise(tempImage, rdnNoise)
     
 
 
@@ -2565,9 +2565,9 @@ def darkenImage(img, lightIntensityMatrix):
     return temp
 ###
 
-def addNoise(noise_typ, img):
+def addNoise(img, noise_typ):
     temp = img
-    noise_img = random_noise(temp, mode=noise_typ, amount=0.3)
+    noise_img = random_noise(temp, mode=noise_typ)
     noise_img = np.array(255*noise_img, dtype = 'uint8')
     return noise_img
 ###
@@ -2578,20 +2578,16 @@ def growImage(img, scale):
     width = int(img.shape[1] * scale)
     height = int(img.shape[0] * scale)
 
-    dsize = (width, height)
-
-    grewImage = cv2.resize(temp, dsize)
+    grewImage = cv2.resize(temp, (width, height))
     return grewImage
 
-def shrinkImage(img, lightIntensityMatrix):
+def shrinkImage(img, scale):
     temp = img 
 
     width = int(img.shape[1] * scale / 100)
     height = int(img.shape[0] * scale / 100)
 
-    dsize = (width, height)
-
-    grewImage = cv2.resize(temp, dsize)
+    grewImage = cv2.resize(temp, (width, height))
     return grewImage
 
 def rotateImage(img, angle):
