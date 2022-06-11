@@ -26,17 +26,22 @@ from numpy import r_ # used in DCT compression
 
 from skimage.segmentation import felzenszwalb # type of segmentation method
 from skimage.feature import canny #region filling
+from skimage.util import random_noise # several noise options
 
 from mahotas import haar # used for haar transform
 
 from scipy import fft # used for dct transform
 from scipy.fftpack import dct, idct # used for Compression
 from scipy.ndimage import binary_fill_holes #region filling
+from scipy.ndimage import rotate
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
 #from types import NoneType
+ 
+import random
 
+from PIL import Image, ImageEnhance
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
 # Global Vars below
@@ -2456,12 +2461,12 @@ def dct2(a):
 def idct2(a):
     return idct( idct( a, axis=0 , norm='ortho'), axis=1 , norm='ortho')
 ###
-#------------------------------------------------------------------------------------Malice Functions---------------------------
+#------------------------------------------------------------------------------------Messing Functions---------------------------
 def conductBulkMessUP():
     currentDir = getcwd()
-    folder = "Notes_DataSet"
+    folder = "Resized_Notes_DataSet"
     path = walk(currentDir + "\\" + folder)
-    destinationFolder = currentDir + "\\Resized_Notes_DataSet"
+    destinationFolder = currentDir + "\\MessedUp_Notes_DataSet"
 
     count1 = 0
     for root, directories, files in path:
@@ -2471,9 +2476,9 @@ def conductBulkMessUP():
             temp = currentDir + "\\" + folder + "\\" + file
             image = cv2.imread(temp, cv2.IMREAD_UNCHANGED)
 
-            messedUp = cv2.resize(image, (y, x)) # note order
+            messedUp = rdnMessup(image)
             # cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
-            success = saveFile(folder="Malice_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="Malice_", image=resizedImage)
+            success = saveFile(folder="Messed_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="MessedUp_", image=messedUp)
 
     path = walk(destinationFolder)
     count2 = 0
@@ -2485,12 +2490,183 @@ def conductBulkMessUP():
         tellUser("Pictures messed up Successfully", labelUpdates)
     else:
         tellUser("Not all pictures are messsed...", labelUpdates)
+###
 
-def malice():
-    return
+def rdnMessup(img):
+    tempImage = img
+    noiseList = ["gaussian", "s&p", "poisson", "speckle"]
+    lightIntensityList = [30, 40, 50, 60, 70 ,80, 90, 100, 110]
+    angleList = [45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]
 
-def brightenImage(img):
-    return img
+    rdnNoise = random.choice(noiseList)
+    rdnAngle = random.choice(angleList)
+    rdnLightIntensiry = random.choice(lightIntensityList)
+    rdnOption = random.randint(0,6)
+    
+    lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * (rdnLightIntensiry)
+    
+    """
+    if rdnOption == 0:
+        tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        #tempImage = addNoise(tempImage, rdnNoise)
+        #tempImage = rotateImage(tempImage, rdnAngle)
+    """
+    
+    if rdnOption == 1:
+        tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        #tempImage = addNoise(tempImage, rdnNoise)
+        #tempImage = rotateImage(tempImage, rdnAngle)
+    
+    """
+    if rdnOption == 2:
+        #tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        #tempImage = rotateImage(tempImage, rdnAngle)
+
+    if rdnOption == 3:
+        #tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        #tempImage = rotateImage(tempImage, rdnNoise)
+    
+    if rdnOption == 4:
+        #tempImage = brightenImage(tempImage, lightIntensityMatrix)
+        #tempImage = addNoise(tempImage, rdnNoise)
+
+    if rdnOption == 5:
+        #tempImage = darkenImage(tempImage, lightIntensityMatrix)
+        #tempImage = addNoise(tempImage, rdnNoise)
+    
+    if rdnOption == 6:
+        #tempImage = addNoise(tempImage, rdnNoise)
+        #tempImage = rotateImage(tempImage, rdnAngle)
+    """
+    return tempImage
+###
+
+
+def brightenImage(img, lightIntensityMatrix):
+    temp = img
+    temp = cv2.add(img, lightIntensityMatrix)
+    return temp
+###
+
+
+def darkenImage(img, lightIntensityMatrix):
+    temp = img
+    temp = cv2.subtract(img, lightIntensityMatrix)
+    return temp
+###
+
+def addNoise(noise_typ, img):
+    # Add noise to an Image 
+    img_arr = np.asarray(img)
+    noise_image = random_noise(img_arr, mode = noise_typ)
+    return Image.fromarray(noise_image)
+###
+
+def rotateImage(img, angle):
+    # Rotate an Image
+    rotated = rotate(img, angle, reshape=True)
+    return rotated
+###
+
+def chooseNoise():
+    window.filename = openGUI("Select an Image to Noise to")
+    success, img= getImage(window.filename)
+
+    if (success):
+        # Open new window to choose enhancement
+        noiseWindow = Toplevel(window)
+        noiseWindow.title("Choose a noise...")
+        noiseWindow.geometry("300x400")
+
+        noiseOption = IntVar()
+        noiseOption.set(0)
+
+        Radiobutton(noiseWindow, text="Gaussian Noise", variable=noiseOption, value=1).pack(anchor=W, side="top")
+        Radiobutton(noiseWindow, text="Salt and Pepper Noise", variable=noiseOption, value=2).pack(anchor=W, side="top")
+        Radiobutton(noiseWindow, text="Poisson Noise", variable=noiseOption, value=3).pack(anchor=W, side="top")
+        Radiobutton(noiseWindow, text="Speckle Noise", variable=noiseOption, value=4).pack(anchor=W, side="top")
+
+        Button(noiseWindow, text="Apply Noise and Show", width=35, bg='gray',
+            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=True) 
+        ).pack()
+        Button(noiseWindow, text="Apply Noise and Save", width=35, bg='gray',
+            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=False) 
+        ).pack()
+        Button(noiseWindow, text="Close Plots", width=35, bg='gray',
+            command=lambda: (plt.close("Noise Changes"))
+        ).pack()
+
+    else:
+        tellUser("Unable to Get Image to add Noise...", labelUpdates)
+    
+    return True
+###
+
+
+def executeNoiseOption(intVal, img, imgName, show):
+
+    fig = plt.figure(num="Noise Changes", figsize=(8, 4))
+    plt.clf() # Should clear last plot but keep window open? 
+
+    newImg = [[]]
+    newMessage = ""
+
+    # 4 options
+    if (intVal == 1):
+        # Gaussian Noise
+        newImg = addNoise("gaussian", img)
+        newMessage = "GaussianNoise_"
+
+    elif (intVal == 2):
+        # Salt and Pepper Noise
+        newImg = addNoise(img)
+        newMessage = "SaltAndPepperNoise_"
+
+    elif (intVal == 3):
+        # Poisson Noise
+        newImg = addNoise(img)
+        newMessage = "PoissonNoise_"
+
+    elif (intVal == 4):
+        # Speckle Noise
+        newImg = addNoise(img)
+        newMessage = "SpeckleNoise_"
+        
+    else:
+        tellUser("Select an option...", labelUpdates)
+ 
+    if (show):
+        fig.add_subplot(1, 3, 1)
+
+        plt.imshow(img)
+        plt.title('Original Image of '+ getFileName(imgName), wrap=True)
+
+        plotMask(fig, newImg, imgName, newMessage)
+
+        plt.tight_layout() # Prevents title overlap in display
+        plt.show()  
+    else:
+        # save image
+        destinationFolder = "Masked_Individual_Images"
+        success = saveFile(destinationFolder, imgName, newMessage, newImg)   
+        if (success):
+            tellUser("Image Saved successfully", labelUpdates)
+        else:
+            tellUser("Unable to Save File...", labelUpdates)
+###
+
+
+def plotNoise(fig, newImg, imgName, newMessage):
+    fig.add_subplot(1, 3, 2)
+    plt.imshow(newImg, cmap='gray')
+    plt.title(newMessage + "of_" + getFileName(imgName), wrap=True)
+    plt.axis('off') #Removes axes
+
+    fig.add_subplot(1, 3, 3)
+    plt.text(0.3, 0.7, "Mask")
+    plt.table(cellText=mask, loc='center')
+    plt.axis('off') #Removes axes
+###
 #------------------------------------------------------------------------------------Other Functions Below----------------------
 
 # places updated label for user
