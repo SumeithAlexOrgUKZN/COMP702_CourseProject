@@ -97,11 +97,11 @@ def chooseExperimentMethod():
     )
     button2= tk.Button(
         master = buttonFrameTop,
-        text = "Bulk Changes (Resize)",
+        text = "Conduct Bulk Changes",
         width = 40,
         height = 5, 
         bg = "silver",
-        command = conductBulkResize
+        command = chooseBulkChanges
     )
     button3 = tk.Button(
         master = buttonFrameTop,
@@ -193,11 +193,10 @@ def chooseExperimentMethod():
     )
     button14 = tk.Button(
         master = buttonFrameBottom1,
-        text = "Bulk change (Messup images)",
+        text = "14",
         width = 40,
         height = 5, 
         bg = "silver",
-        command = conductBulkMessUP
     )
     button15 = tk.Button(
         master = buttonFrameBottom1,
@@ -2465,7 +2464,7 @@ def idct2(a):
 #------------------------------------------------------------------------------------Messing Functions---------------------------
 def conductBulkMessUP():
     currentDir = getcwd()
-    folder = "Notes_DataSet"
+    folder = "Resized_Notes_DataSet"
     path = walk(currentDir + "\\" + folder)
     destinationFolder = currentDir + "\\MessedUp_Notes_DataSet"
 
@@ -2479,7 +2478,7 @@ def conductBulkMessUP():
 
             messedUp = rdnMessup(image)
             # cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
-            success = saveFile(folder="Messed_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="MessedUp_", image=messedUp)
+            success = saveFile(folder="MessedUp_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="MessedUp_", image=messedUp)
 
     path = walk(destinationFolder)
     count2 = 0
@@ -2497,13 +2496,13 @@ def rdnMessup(img):
     tempImage = img
     noiseList = ["gaussian", "s&p", "poisson", "speckle"]
     lightIntensityList = [30, 40, 50, 60, 70 ,80, 90, 100, 110]
-    scaleList = range(5,95, 5)
-    angleList = range(5,360, 5)
+    # scaleList = range(5, 10, 5) # (manipulate size by factor 5% -- 10%) # removed because takes too long
+    angleList = range(5, 360, 5)
 
     rdnNoise = random.choice(noiseList)
     rdnAngle = random.choice(angleList)
     rdnLightIntensiry = random.choice(lightIntensityList)
-    rdnScale = random.choice(scaleList)
+    # rdnScale = random.choice(scaleList)
     rdnOption = random.randint(0,6)
     
     lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * (rdnLightIntensiry)
@@ -2511,25 +2510,25 @@ def rdnMessup(img):
     if rdnOption == 0:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
-        tempImage = growImage(tempImage, rdnScale)
+        # tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 1:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
-        tempImage = shrinkImage(tempImage, rdnScale)
+        # tempImage = shrinkImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 2:
         tempImage = brightenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
-        tempImage = shrinkImage(tempImage, rdnScale)
+        # tempImage = shrinkImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 3:
         tempImage = darkenImage(tempImage, lightIntensityMatrix)
         tempImage = addNoise(tempImage, rdnNoise)
-        tempImage = growImage(tempImage, rdnScale)
+        # tempImage = growImage(tempImage, rdnScale)
         tempImage = rotateImage(tempImage, rdnAngle)
     
     if rdnOption == 4:
@@ -2686,17 +2685,50 @@ def executeNoiseOption(intVal, img, imgName, show):
 ###
 
 
-def plotNoise(fig, newImg, imgName, newMessage):
-    fig.add_subplot(1, 3, 2)
-    plt.imshow(newImg, cmap='gray')
-    plt.title(newMessage + "of_" + getFileName(imgName), wrap=True)
-    plt.axis('off') #Removes axes
+# def plotNoise(fig, newImg, imgName, newMessage, mask):
+#     fig.add_subplot(1, 3, 2)
+#     plt.imshow(newImg, cmap='gray')
+#     plt.title(newMessage + "of_" + getFileName(imgName), wrap=True)
+#     plt.axis('off') #Removes axes
 
-    fig.add_subplot(1, 3, 3)
-    plt.text(0.3, 0.7, "Mask")
-    plt.table(cellText=mask, loc='center')
-    plt.axis('off') #Removes axes
+#     fig.add_subplot(1, 3, 3)
+#     plt.text(0.3, 0.7, "Mask")
+#     plt.table(cellText=mask, loc='center')
+#     plt.axis('off') #Removes axes
+# ###
+
+#------------------------------------------------------------------------------------Bulk Changes Below-------------------------
+
+def chooseBulkChanges():
+    # Open new window to choose enhancement
+    bulkWindow = Toplevel(window)
+    bulkWindow.title("Choose a king of Bulk Change...")
+    bulkWindow.geometry("300x400")
+
+    bulkOption = IntVar()
+    bulkOption.set(0)
+
+    Radiobutton(bulkWindow, text="Bulk Resize", variable=bulkOption, value=1).pack(anchor=W, side="top")
+    Radiobutton(bulkWindow, text="Bulk Mess Up", variable=bulkOption, value=2).pack(anchor=W, side="top")
+
+    Button(bulkWindow, text="Apply Bulk Changes", width=35, bg='gray',
+        command=lambda: executeBulkOption(intVal=bulkOption.get()) 
+    ).pack()
 ###
+
+def executeBulkOption(intVal):
+    if (intVal == 1):
+        # Bulk Resize
+        conductBulkResize()
+
+    elif (intVal == 2):
+        # Bulk Mess Up
+        conductBulkMessUP()
+
+    else:
+        tellUser("Please select an option...", labelUpdates)
+###
+
 #------------------------------------------------------------------------------------Other Functions Below----------------------
 
 # places updated label for user
