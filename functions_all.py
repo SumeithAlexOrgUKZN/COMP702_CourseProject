@@ -34,12 +34,12 @@ from mahotas import haar # used for haar transform
 from scipy import fft # used for dct transform
 from scipy.fftpack import dct, idct # used for Compression
 from scipy.ndimage import binary_fill_holes #region filling
-from scipy.ndimage import rotate
-from skimage.util import random_noise
+from scipy.ndimage import rotate #used to rotate an image
+from skimage.util import random_noise # used for to inject random noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
-#from types import NoneType
+from types import NoneType
  
 import random
 
