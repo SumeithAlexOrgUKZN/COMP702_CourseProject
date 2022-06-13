@@ -332,8 +332,8 @@ def executePredictionChoice(intVal):
 
 def bulkClassification():
     currentDir = getcwd()
-    # folder = "MessedUp_Notes_DataSet"
-    folder = "Notes_DataSet"
+    folder = "MessedUp_Notes_DataSet"
+    # folder = "Notes_DataSet"
     destinationFolder = currentDir + "\\" + folder
     path = walk(destinationFolder)
 
@@ -345,8 +345,8 @@ def bulkClassification():
 
             # cv2.imshow("JJ", image)
             # cv2.waitKey(0)
-            processedImage = image 
-            # processedImage = processColourPicture(image, False)
+            # processedImage = image 
+            processedImage = processColourPicture(image, False)
 
             colourInfo = getColourInfo(processedImage)
             # print("\n", colourInfo)
@@ -4122,5 +4122,3 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
     success = cv2.imwrite(location, image) # True or False
     return success
 ###
-
-bulkClassification()
