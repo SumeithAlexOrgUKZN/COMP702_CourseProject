@@ -197,10 +197,11 @@ def chooseExperimentMethod():
     )
     button14 = tk.Button(
         master = buttonFrameBottom1,
-        text = "14",
+        text = "Randomly Mess Up an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseMessUp
     )
     button15 = tk.Button(
         master = buttonFrameBottom1,
@@ -2847,8 +2848,8 @@ def addNoise(img, noise_typ):
 def growImage(img, scale):
     temp = img 
 
-    width = int(img.shape[1] * scale)
-    height = int(img.shape[0] * scale)
+    width = int(img.shape[1] * ((scale + 100) / 100))
+    height = int(img.shape[0] * ((scale + 100) / 100))
 
     grewImage = cv2.resize(temp, (width, height))
     return grewImage
@@ -2856,8 +2857,8 @@ def growImage(img, scale):
 def shrinkImage(img, scale):
     temp = img 
 
-    width = int(img.shape[1] * scale / 100)
-    height = int(img.shape[0] * scale / 100)
+    width = int(img.shape[1] * (scale / 100))
+    height = int(img.shape[0] * (scale / 100))
 
     grewImage = cv2.resize(temp, (width, height))
     return grewImage
@@ -2868,105 +2869,109 @@ def rotateImage(img, angle):
     return rotated
 ###
 
-def chooseNoise():
-    window.filename = openGUI("Select an Image to Noise to")
-    success, img= getImage(window.filename)
+def chooseMessUp():
+    window.filename = openGUI("Select an Image...")
+    success, img = getImage(window.filename)
 
     if (success):
-        # Open new window to choose enhancement
-        noiseWindow = Toplevel(window)
-        noiseWindow.title("Choose a noise...")
-        noiseWindow.geometry("300x400")
+        
+        messUpWindow = Toplevel(window)
+        messUpWindow.title("Choose an option...")
+        messUpWindow.geometry("300x300")
 
-        noiseOption = IntVar()
-        noiseOption.set(0)
-
-        Radiobutton(noiseWindow, text="Gaussian Noise", variable=noiseOption, value=1).pack(anchor=W, side="top")
-        Radiobutton(noiseWindow, text="Salt and Pepper Noise", variable=noiseOption, value=2).pack(anchor=W, side="top")
-        Radiobutton(noiseWindow, text="Poisson Noise", variable=noiseOption, value=3).pack(anchor=W, side="top")
-        Radiobutton(noiseWindow, text="Speckle Noise", variable=noiseOption, value=4).pack(anchor=W, side="top")
-
-        Button(noiseWindow, text="Apply Noise and Show", width=35, bg='gray',
-            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=True) 
-        ).pack()
-        Button(noiseWindow, text="Apply Noise and Save", width=35, bg='gray',
-            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=False) 
-        ).pack()
-        Button(noiseWindow, text="Close Plots", width=35, bg='gray',
-            command=lambda: (plt.close("Noise Changes"))
-        ).pack()
-
+        messUpOption = IntVar()
+        messUpOption.set(0)
+        
+        Radiobutton(messUpWindow, text="Brighten an Image", variable=messUpOption, value=1).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Darken an Image", variable=messUpOption, value=2).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Grow an Image", variable=messUpOption, value=3).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Shrink an Image", variable=messUpOption, value=4).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Rotate an Image", variable=messUpOption, value=5).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Gaussian noise to an Image", variable=messUpOption, value=6).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Salt and Pepper noise to an Image", variable=messUpOption, value=7).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Poisson noise to an Image", variable=messUpOption, value=8).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Speckle noise to an Image", variable=messUpOption, value=9).pack(anchor=W)
+        
+        Button(messUpWindow, text="Mess up and Show", width=35, bg='gray',
+            command=lambda: executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = True) 
+        ).pack(anchor=W)
+        Button(messUpWindow, text="Mess up and Save", width=35, bg='gray',
+            command=lambda: executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = False) 
+        ).pack(anchor=W)
+        Button(messUpWindow, width=35, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack(anchor=W)
+        
     else:
-        tellUser("Unable to Get Image to add Noise...", labelUpdates)
-    
+        tellUser("Unable to retrieve the image...", labelUpdates)
     return True
 ###
 
-
-def executeNoiseOption(intVal, img, imgName, show):
-
-    fig = plt.figure(num="Noise Changes", figsize=(8, 4))
-    plt.clf() # Should clear last plot but keep window open? 
-
+def executeMessUpOption(intVal, img, imgName, show):
     newImg = [[]]
     newMessage = ""
 
-    # 4 options
     if (intVal == 1):
-        # Gaussian Noise
-        newImg = addNoise("gaussian", img)
-        newMessage = "GaussianNoise_"
+        lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
+        newImg = brightenImage(img, lightIntensityMatrix)
+        newMessage = "Brighten_" 
 
+        
     elif (intVal == 2):
-        # Salt and Pepper Noise
-        newImg = addNoise(img)
-        newMessage = "SaltAndPepperNoise_"
-
+        lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
+        newImg = darkenImage(img, lightIntensityMatrix)
+        newMessage = "Darken_"
+        
     elif (intVal == 3):
-        # Poisson Noise
-        newImg = addNoise(img)
-        newMessage = "PoissonNoise_"
+        randomScale = random.randint(50, 100)
+        newImg = growImage(img, randomScale)
+        newMessage = "Grow_"
 
     elif (intVal == 4):
-        # Speckle Noise
-        newImg = addNoise(img)
-        newMessage = "SpeckleNoise_"
+        randomScale = random.randint(50, 100)
+        newImg = shrinkImage(img, randomScale)
+        newMessage = "Shrink_"
+    
+    elif (intVal == 5):
+        RandomAngle = random.randint(45, 360)
+        newImg = rotateImage(img, RandomAngle)
+        newMessage = "Rotated_"
+    
+    elif (intVal == 6):                            
+        newImg = addNoise(img, "gaussian")
+        newMessage = "GaussianNoise_"
+    
+    elif (intVal == 7):
+        newImg = addNoise(img, "s&p")
+        newMessage = "SaltAndPepperNoise_"
+    
+    elif (intVal == 8):
+        newImg = addNoise(img, "poisson")
+        newMessage = "PoissonNoise_"
         
     else:
-        tellUser("Select an option...", labelUpdates)
- 
+        newImg = addNoise(img, "speckle")
+        newMessage = "SpeckleNoise_"
+
     if (show):
-        fig.add_subplot(1, 3, 1)
+        fig = plt.figure(num="Messed Up Changes", figsize=(8, 4))
+        plt.clf() 
+        fig.add_subplot(1, 2, 1)
 
-        plt.imshow(img)
-        plt.title('Original Image of '+ getFileName(imgName), wrap=True)
+        plt.imshow( BGR_to_RGB(img) )
+        plt.title('Image:'+ getFileName(imgName), wrap=True)
 
-        plotMask(fig, newImg, imgName, newMessage)
+        fig.add_subplot(1, 2, 2)
+        plt.imshow( BGR_to_RGB(newImg) )
+        plt.title(newMessage + 'of_'+ getFileName(imgName), wrap=True)
 
-        plt.tight_layout() # Prevents title overlap in display
-        plt.show()  
+        plt.show()
     else:
         # save image
-        destinationFolder = "Masked_Individual_Images"
+        destinationFolder = "Messed_UP_Individual_Images"
         success = saveFile(destinationFolder, imgName, newMessage, newImg)   
         if (success):
             tellUser("Image Saved successfully", labelUpdates)
         else:
             tellUser("Unable to Save File...", labelUpdates)
-###
-
-
-# def plotNoise(fig, newImg, imgName, newMessage, mask):
-#     fig.add_subplot(1, 3, 2)
-#     plt.imshow(newImg, cmap='gray')
-#     plt.title(newMessage + "of_" + getFileName(imgName), wrap=True)
-#     plt.axis('off') #Removes axes
-
-#     fig.add_subplot(1, 3, 3)
-#     plt.text(0.3, 0.7, "Mask")
-#     plt.table(cellText=mask, loc='center')
-#     plt.axis('off') #Removes axes
-# ###
 
 #------------------------------------------------------------------------------------Bulk Changes Below-------------------------
 
@@ -4079,6 +4084,5 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
     return success
 ###
 
-
-
 bulkClassification()
+
