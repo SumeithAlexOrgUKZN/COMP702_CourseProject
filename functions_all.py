@@ -273,6 +273,9 @@ def conductPrediction():
 def executePredictionChoice(intVal):
     # print("Inside executePredictionChoice()")
 
+    # ensure environment ready to begin
+    checkForDependencies()
+
     window.filename = openGUI("Select an Image...")
 
     # BGR because OpenCv Functions
@@ -282,7 +285,12 @@ def executePredictionChoice(intVal):
         if (intVal == 1):
             # Colour Feature Prediction
             # 1) process colour image
-            processedImage = processColourPicture(image, True)
+            processedImage = processColourPicture(image, False)
+
+            colourInfo = getColourInfo(processedImage)
+            print(colourInfo)
+
+            prediction = colourFeaturesComparison(colourInfo)
 
         # elif (intVal == 2):
         #     #
@@ -299,7 +307,63 @@ def executePredictionChoice(intVal):
         tellUser("Unable to open colour image for prediction window...", labelUpdates)
 ###
 
+# this function gets the reference values, and calculates the best result for each image
+def colourFeaturesComparison(colourFeatures):
+    print("inside colourFeaturesComparison")
 
+    # 1) get references
+###
+
+def checkForDependencies():
+    desiredFolder = "Reference_Materials"
+    desiredFile = "all_resized_pictures_colour_features.txt"
+    
+    # create desiredFile
+    if ( not exists(desiredFolder + "\\" + desiredFile) ):
+        folderName = "Resized_Notes_DataSet"
+        array = getClustersOfImages(folderName)
+        save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+
+    desiredFolder = "Reference_Materials"
+    desiredFile = "colour_trends.txt"
+
+    if ( not exists(desiredFolder + "\\" + desiredFile) ):
+        saveColourTrends()
+
+    desiredFolder = "Resized_Notes_DataSet"
+
+    # create desiredFolder
+    if ( not exists(desiredFolder) ):
+        currentDir = getcwd()
+        destinationFolder = currentDir + "\\" + desiredFolder
+
+         # create directory
+        try:
+            mkdir(destinationFolder)
+        except FileExistsError as uhoh:
+            pass
+        except Exception as uhoh:
+            print("New Error:", uhoh)
+            pass
+    
+    # ensure 55 pictures present
+    currentDir = getcwd()
+    folder = "Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+    destinationFolder = currentDir + "\\Resized_Notes_DataSet"
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+    if (count1 < 55):
+        # CONDUCT BULK RESIZE
+        (x, y) = (512, 1024)
+        bulkResize(x, y)
+    
+    # ! TODO --> Check for mess up images
+###
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
 
 # here, we look at the original dataset and place results in a matplotlib plot
@@ -3039,6 +3103,14 @@ def getColourInfo(img):
 def getClustersOfImages(folderName):
     currentDir = getcwd()
     path = walk(currentDir + "\\" + folderName)
+
+    resizedDirectory = "Resized_Notes_DataSet"
+
+    # create desiredFile
+    if ( not exists(currentDir + "\\" + resizedDirectory) ):
+        # CONDUCT BULK RESIZE
+        (x, y) = (512, 1024)
+        bulkResize(x, y)
 
     answerArray, tempNames = [], []
     redAverages, greenAverages, blueAverages = [], [], []
