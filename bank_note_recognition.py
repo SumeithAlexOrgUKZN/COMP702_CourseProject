@@ -11,7 +11,7 @@ Summary:
 '''
 #----------------------------------------------------------------------------------------------------------------Packages Below
 # global Vars to use
-from functions_all import chooseExperimentMethod, window, labelUpdates, updateFrame, resizedWidth, resizedHeight
+from functions_all import chooseExperimentMethod, conductPrediction, window, labelUpdates, updateFrame, resizedWidth, resizedHeight, checkForDependencies
 
 # PIL to find Image Path for image in GUI, tkinter for GUI
 from PIL import Image, ImageTk
@@ -51,6 +51,7 @@ buttonClassify = tk.Button(
     width = resizedHeight // (10 * 2),
     height = 5, 
     bg = "silver",
+    command = conductPrediction
 )
 buttonExperiment = tk.Button(
     master = buttonFrame,
@@ -85,6 +86,8 @@ buttonClose.pack(side = tk.RIGHT)
 #------------------------------------------------------------------------------------Open Below---------------------------------
 
 print("\n---Program Starting---")
+
+checkForDependencies()
 
 # open the window
 window.mainloop()

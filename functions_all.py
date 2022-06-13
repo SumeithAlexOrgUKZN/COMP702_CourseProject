@@ -13,17 +13,18 @@ Summary:
 #----------------------------------------------------------------------------------------------------------------Packages Below
 
 # Tkinter is the GUI 
+from concurrent.futures import process
 import tkinter as tk
 from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 
 # library for image manipulation
 import cv2
+from cv2 import waitKey
 
 from matplotlib import pyplot as plt
 
 import numpy as np
 from numpy import r_
-from scipy.ndimage.interpolation import rotate # used in DCT compression
 
 from skimage.segmentation import felzenszwalb # type of segmentation method
 from skimage.feature import canny #region filling
@@ -40,8 +41,11 @@ from skimage.util import random_noise # used for to inject random noise
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
 from types import NoneType
- 
+
+from os.path import exists
 import random
+from math import atan2, pi, sqrt, cos, sin
+
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -193,17 +197,19 @@ def chooseExperimentMethod():
     )
     button14 = tk.Button(
         master = buttonFrameBottom1,
-        text = "14",
+        text = "Randomly Mess Up an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseMessUp
     )
     button15 = tk.Button(
         master = buttonFrameBottom1,
-        text = "15",
+        text = "Explore Orientation of an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseOrientation
     )
     button16 = tk.Button(
         master = buttonFrameBottom1,
@@ -214,17 +220,19 @@ def chooseExperimentMethod():
     )
     button17 = tk.Button(
         master = buttonFrameBottom2,
-        text = "17",
+        text = "Calculate Features",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseFeatures
     )
     button18 = tk.Button(
         master = buttonFrameBottom2,
-        text = "18",
+        text = "Process Individual Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseProcessingOption
     )
     buttonClose = tk.Button(
         master = buttonFrameBottom2,
@@ -245,6 +253,309 @@ def chooseExperimentMethod():
     button17.pack(side = tk.LEFT); button18.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
 ###
 
+def conductPrediction():
+    predictionWindow = Toplevel(window)
+    predictionWindow.title("Please Choose the type of Prediction")
+    predictionWindow.geometry("300x300")
+
+    predictionOption = IntVar()
+    predictionOption.set(0)
+    
+    Radiobutton(predictionWindow, text="Individual Colour Feature Prediction", variable=predictionOption, value=1).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Colour Feature Prediction", variable=predictionOption, value=2).pack(anchor=W)
+    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=3).pack(anchor=W)
+    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=4).pack(anchor=W)
+
+    Button(predictionWindow, text="Predict!", width=50, bg='gray',
+        command=lambda: executePredictionChoice(intVal=predictionOption.get())
+    ).pack(anchor=W, side="top")
+###
+
+def executePredictionChoice(intVal):
+    # print("Inside executePredictionChoice()")
+
+    # ensure environment ready to begin
+    checkForDependencies()
+
+    if (intVal != 2):
+        window.filename = openGUI("Select an Image...")
+
+        # BGR because OpenCv Functions
+        success, image = imageToColourBGR(window.filename)
+
+        if (success):
+            if (intVal == 1):
+                # Colour Feature Prediction
+                # 1) process colour image
+                processedImage = processColourPicture(image, False)
+
+                colourInfo = getColourInfo(processedImage)
+                # print(colourInfo)
+
+                predictionVector = colourFeaturesComparison(colourInfo)
+                result = explainPrediction(predictionVector)
+
+                fig = plt.figure(num="Results", figsize=(10, 4))
+                plt.clf() # Should clear last plot but keep window open?
+
+                fig.add_subplot(1, 3, 1)
+                plt.imshow( BGR_to_RGB(image), cmap='gray')
+                plt.title("Original", wrap=True)
+                plt.axis('off') #Removes axes
+
+                fig.add_subplot(1, 3, 2)
+                plt.imshow( BGR_to_RGB(processedImage), cmap='gray')
+                plt.title("Processed", wrap=True)
+                plt.axis('off') #Removes axes
+
+                fig.add_subplot(1, 3, 3)
+                plt.text(0.2, 0.5, "Hit Vector revealed prediction of: " + result)
+                # plt.table(cellText=[predictionVector, ["Final Prediction:", "", "", result, "", ""]], loc='center')
+                plt.axis('off') #Removes axes
+
+                plt.show()
+
+            # elif (intVal == 3):
+            #     #
+
+            # elif (intVal == 4):
+            #     #
+
+            else:
+                tellUser("Please select an option", labelUpdates)
+        else:
+            tellUser("Unable to open colour image for prediction window...", labelUpdates)
+    else:
+        # Bulk Prediction
+        bulkClassification()
+###
+
+def bulkClassification():
+    currentDir = getcwd()
+    folder = "MessedUp_Notes_DataSet"
+    # folder = "Notes_DataSet"
+    destinationFolder = currentDir + "\\" + folder
+    path = walk(destinationFolder)
+
+    
+
+    for root, directories, files in path:
+        for file in files:
+            success, image = imageToColourBGR(destinationFolder + "\\" + file)
+
+            # cv2.imshow("JJ", image)
+            # cv2.waitKey(0)
+            # processedImage = image 
+            processedImage = processColourPicture(image, False)
+
+            colourInfo = getColourInfo(processedImage)
+            # print("\n", colourInfo)
+
+            predictionVector = colourFeaturesComparison(colourInfo)
+            result = explainPrediction(predictionVector)
+            print(file, ":::::", predictionVector, ":::::", result)
+            print()
+###
+
+# finds most common item in list
+def most_common(lst):
+    return max(set(lst), key=lst.count)
+###
+
+def explainPrediction(predictionVector):
+    result = most_common(predictionVector)
+
+    return (result)
+    # print("This bill is likely a ******--", result, "--******", sep="")
+###
+
+# this function gets the reference values, and calculates the best result for each image
+def colourFeaturesComparison(colourFeatures):
+    # print("inside colourFeaturesComparison")
+    # print(colourFeatures)
+
+    # 1) get references
+    overallValues, overallVariances = getColourVectors()
+
+    # print("Overall values", overallValues, "\n")
+
+    globalAverages = []; globalModes = []
+    v1 = []; v2 = [] # variances
+    for i in range(len(overallValues)):
+        if (i % 2 == 0):
+            globalAverages.append(overallValues[i])
+            v1.append(overallVariances[i])
+        else:
+            globalModes.append(overallValues[i])
+            v2.append(overallVariances[i])
+
+    # print(averages, modes, sep="\n\n")
+
+    # averages and modes are the 1X3 vectors for our image
+    averages = [];modes = []
+
+    for i in range(len(colourFeatures)):
+        averages.append(colourFeatures[i][1][0])
+        modes.append(colourFeatures[i][1][1])
+    
+    # print(globalAverages, "\n", averages)
+    # print()
+    # print(globalModes, "\n", modes)
+
+    # Now, lets loop through the 5 sets of data and calculate the score.
+    scoreVector = []
+    key = ["R010", "R020", "R050", "R100", "R200"]
+    val1, val2 = 0, 0
+    minVal1 = -1; minIndex1 = -1
+    minVal2 = -1; minIndex2 = -1
+    for i in range(3):
+        # scan each row for Averages and Modes
+        for j in range(5):
+            val1 = abs(float(averages[i]) - float(globalAverages[j][i]))
+            val2 = abs(float(modes[i]) - float(globalModes[j][i]))
+
+            # instantiate
+            if (minVal1 == -1):
+                minVal1 = val1; minIndex1 = j
+                minVal2 = val2; minIndex2 = j
+
+            if (val1 < minVal1):
+                minVal1 = val1; minIndex1 = j
+            elif (val2 < minVal2):
+                minVal2 = val2; minIndex2 = j
+
+            # within range
+            # if (val1 < abs(float(globalAverages[i][j])) -float(v1[i][j])):
+            #     averageSum += val1
+            # # within range
+            # if (val2 < abs(float(globalModes[i][j])) -float(v2[i][j])):
+            #     modeSum += val2
+
+        # at this point - the lowest score is the best hit!
+
+        # print(averageSum, modeSum)
+        scoreVector.append(key[minIndex1])
+        scoreVector.append(key[minIndex2])
+
+        #reset
+        minVal1 = -1; minIndex1 = -1
+        minVal2 = -1; minIndex2 = -1
+
+    # print(scoreVector)
+    return scoreVector
+###
+
+def getColourVectors():
+    # read in data from desiredFile
+    desiredFile = "Reference_Materials" + "\\" + "colour_trends.txt"
+
+    with open(desiredFile) as f:
+        lines = f.readlines()
+    
+    counter = 0
+    valueArray = [[]]
+    varianceArray = [[]]
+    tempValues = []; tempVariances = []
+    dataArray = []
+    for i in range(len(lines)):
+        # skip first part of these paragraphs
+        if (i == 0) or (i % 7 == 0):
+            continue
+            
+        # append
+        if (counter % 3 == 0):
+            # skip first run
+            if (counter != 0):
+                valueArray.append(tempValues)
+                varianceArray.append(tempVariances)
+                tempValues = []; tempVariances = [] # reset
+
+        data = lines[i]
+        if (i != len(lines)-1): data = data[:-1] # remove end chars, unless last element
+        dataArray = data.split()
+
+        # print(dataArray)
+        # print("0", dataArray[2])
+        # print("0", dataArray[3])
+
+        tempValues.append(dataArray[2])
+        tempVariances.append(dataArray[3])
+
+        counter += 1
+    
+    # final iteration has more data:
+    valueArray.append(tempValues)
+    varianceArray.append(tempVariances)
+
+    return valueArray[ 1 : ], varianceArray[ 1 : ]
+###
+
+def checkForDependencies():
+
+    # ! TODO --> Look for Notes DataSet
+    # ensure 55 pictures present
+    currentDir = getcwd()
+    folder = "Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+    
+    if (count1 >= 55):
+        # only progress if Notes_DataSet is present
+        desiredFolder = "Reference_Materials"
+        desiredFile = "all_resized_pictures_colour_features.txt"
+        
+        # create desiredFile
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            folderName = "Resized_Notes_DataSet"
+            array = getClustersOfImages(folderName)
+            save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+
+        desiredFolder = "Reference_Materials"
+        desiredFile = "colour_trends.txt"
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveColourTrends()
+
+        desiredFolder = "Resized_Notes_DataSet"
+
+        # create desiredFolder
+        if ( not exists(desiredFolder) ):
+            currentDir = getcwd()
+            destinationFolder = currentDir + "\\" + desiredFolder
+
+            # create directory
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+        
+        # ensure 55 pictures present
+        currentDir = getcwd()
+        folder = "Notes_DataSet"
+        path = walk(currentDir + "\\" + folder)
+        destinationFolder = currentDir + "\\Resized_Notes_DataSet"
+
+        count1 = 0
+        for root, directories, files in path:
+            for file in files:
+                count1 += 1
+
+        if (count1 < 55):
+            # CONDUCT BULK RESIZE
+            (x, y) = (512, 1024)
+            bulkResize(x, y)
+        
+        # ! TODO --> Check for mess up images
+    else:
+        tellUser("Please load the Data-Set, provided by the authors!")
+###
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
 
 # here, we look at the original dataset and place results in a matplotlib plot
@@ -2576,8 +2887,8 @@ def addNoise(img, noise_typ):
 def growImage(img, scale):
     temp = img 
 
-    width = int(img.shape[1] * scale)
-    height = int(img.shape[0] * scale)
+    width = int(img.shape[1] * ((scale + 100) / 100))
+    height = int(img.shape[0] * ((scale + 100) / 100))
 
     grewImage = cv2.resize(temp, (width, height))
     return grewImage
@@ -2585,8 +2896,8 @@ def growImage(img, scale):
 def shrinkImage(img, scale):
     temp = img 
 
-    width = int(img.shape[1] * scale / 100)
-    height = int(img.shape[0] * scale / 100)
+    width = int(img.shape[1] * (scale / 100))
+    height = int(img.shape[0] * (scale / 100))
 
     grewImage = cv2.resize(temp, (width, height))
     return grewImage
@@ -2597,105 +2908,109 @@ def rotateImage(img, angle):
     return rotated
 ###
 
-def chooseNoise():
-    window.filename = openGUI("Select an Image to Noise to")
-    success, img= getImage(window.filename)
+def chooseMessUp():
+    window.filename = openGUI("Select an Image...")
+    success, img = getImage(window.filename)
 
     if (success):
-        # Open new window to choose enhancement
-        noiseWindow = Toplevel(window)
-        noiseWindow.title("Choose a noise...")
-        noiseWindow.geometry("300x400")
+        
+        messUpWindow = Toplevel(window)
+        messUpWindow.title("Choose an option...")
+        messUpWindow.geometry("300x300")
 
-        noiseOption = IntVar()
-        noiseOption.set(0)
-
-        Radiobutton(noiseWindow, text="Gaussian Noise", variable=noiseOption, value=1).pack(anchor=W, side="top")
-        Radiobutton(noiseWindow, text="Salt and Pepper Noise", variable=noiseOption, value=2).pack(anchor=W, side="top")
-        Radiobutton(noiseWindow, text="Poisson Noise", variable=noiseOption, value=3).pack(anchor=W, side="top")
-        Radiobutton(noiseWindow, text="Speckle Noise", variable=noiseOption, value=4).pack(anchor=W, side="top")
-
-        Button(noiseWindow, text="Apply Noise and Show", width=35, bg='gray',
-            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=True) 
-        ).pack()
-        Button(noiseWindow, text="Apply Noise and Save", width=35, bg='gray',
-            command=lambda: executeNoiseOption(intVal=noiseOption.get(), img=img, imgName=window.filename, show=False) 
-        ).pack()
-        Button(noiseWindow, text="Close Plots", width=35, bg='gray',
-            command=lambda: (plt.close("Noise Changes"))
-        ).pack()
-
+        messUpOption = IntVar()
+        messUpOption.set(0)
+        
+        Radiobutton(messUpWindow, text="Brighten an Image", variable=messUpOption, value=1).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Darken an Image", variable=messUpOption, value=2).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Grow an Image", variable=messUpOption, value=3).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Shrink an Image", variable=messUpOption, value=4).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Rotate an Image", variable=messUpOption, value=5).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Gaussian noise to an Image", variable=messUpOption, value=6).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Salt and Pepper noise to an Image", variable=messUpOption, value=7).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Poisson noise to an Image", variable=messUpOption, value=8).pack(anchor=W)
+        Radiobutton(messUpWindow, text="Add Speckle noise to an Image", variable=messUpOption, value=9).pack(anchor=W)
+        
+        Button(messUpWindow, text="Mess up and Show", width=35, bg='gray',
+            command=lambda: executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = True) 
+        ).pack(anchor=W)
+        Button(messUpWindow, text="Mess up and Save", width=35, bg='gray',
+            command=lambda: executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = False) 
+        ).pack(anchor=W)
+        Button(messUpWindow, width=35, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack(anchor=W)
+        
     else:
-        tellUser("Unable to Get Image to add Noise...", labelUpdates)
-    
+        tellUser("Unable to retrieve the image...", labelUpdates)
     return True
 ###
 
-
-def executeNoiseOption(intVal, img, imgName, show):
-
-    fig = plt.figure(num="Noise Changes", figsize=(8, 4))
-    plt.clf() # Should clear last plot but keep window open? 
-
+def executeMessUpOption(intVal, img, imgName, show):
     newImg = [[]]
     newMessage = ""
 
-    # 4 options
     if (intVal == 1):
-        # Gaussian Noise
-        newImg = addNoise("gaussian", img)
-        newMessage = "GaussianNoise_"
+        lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
+        newImg = brightenImage(img, lightIntensityMatrix)
+        newMessage = "Brighten_" 
 
+        
     elif (intVal == 2):
-        # Salt and Pepper Noise
-        newImg = addNoise(img)
-        newMessage = "SaltAndPepperNoise_"
-
+        lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
+        newImg = darkenImage(img, lightIntensityMatrix)
+        newMessage = "Darken_"
+        
     elif (intVal == 3):
-        # Poisson Noise
-        newImg = addNoise(img)
-        newMessage = "PoissonNoise_"
+        randomScale = random.randint(50, 100)
+        newImg = growImage(img, randomScale)
+        newMessage = "Grow_"
 
     elif (intVal == 4):
-        # Speckle Noise
-        newImg = addNoise(img)
-        newMessage = "SpeckleNoise_"
+        randomScale = random.randint(50, 100)
+        newImg = shrinkImage(img, randomScale)
+        newMessage = "Shrink_"
+    
+    elif (intVal == 5):
+        RandomAngle = random.randint(45, 360)
+        newImg = rotateImage(img, RandomAngle)
+        newMessage = "Rotated_"
+    
+    elif (intVal == 6):                            
+        newImg = addNoise(img, "gaussian")
+        newMessage = "GaussianNoise_"
+    
+    elif (intVal == 7):
+        newImg = addNoise(img, "s&p")
+        newMessage = "SaltAndPepperNoise_"
+    
+    elif (intVal == 8):
+        newImg = addNoise(img, "poisson")
+        newMessage = "PoissonNoise_"
         
     else:
-        tellUser("Select an option...", labelUpdates)
- 
+        newImg = addNoise(img, "speckle")
+        newMessage = "SpeckleNoise_"
+
     if (show):
-        fig.add_subplot(1, 3, 1)
+        fig = plt.figure(num="Messed Up Changes", figsize=(8, 4))
+        plt.clf() 
+        fig.add_subplot(1, 2, 1)
 
-        plt.imshow(img)
-        plt.title('Original Image of '+ getFileName(imgName), wrap=True)
+        plt.imshow( BGR_to_RGB(img) )
+        plt.title('Image:'+ getFileName(imgName), wrap=True)
 
-        plotMask(fig, newImg, imgName, newMessage)
+        fig.add_subplot(1, 2, 2)
+        plt.imshow( BGR_to_RGB(newImg) )
+        plt.title(newMessage + 'of_'+ getFileName(imgName), wrap=True)
 
-        plt.tight_layout() # Prevents title overlap in display
-        plt.show()  
+        plt.show()
     else:
         # save image
-        destinationFolder = "Masked_Individual_Images"
+        destinationFolder = "Messed_UP_Individual_Images"
         success = saveFile(destinationFolder, imgName, newMessage, newImg)   
         if (success):
             tellUser("Image Saved successfully", labelUpdates)
         else:
             tellUser("Unable to Save File...", labelUpdates)
-###
-
-
-# def plotNoise(fig, newImg, imgName, newMessage, mask):
-#     fig.add_subplot(1, 3, 2)
-#     plt.imshow(newImg, cmap='gray')
-#     plt.title(newMessage + "of_" + getFileName(imgName), wrap=True)
-#     plt.axis('off') #Removes axes
-
-#     fig.add_subplot(1, 3, 3)
-#     plt.text(0.3, 0.7, "Mask")
-#     plt.table(cellText=mask, loc='center')
-#     plt.axis('off') #Removes axes
-# ###
 
 #------------------------------------------------------------------------------------Bulk Changes Below-------------------------
 
@@ -2727,6 +3042,961 @@ def executeBulkOption(intVal):
 
     else:
         tellUser("Please select an option...", labelUpdates)
+###
+
+#------------------------------------------------------------------------------------Feature Extraction Functions Below---------
+
+def chooseFeatures():
+    # print("Inside chooseFeatures()")
+
+    featureWindow = Toplevel(window)
+    featureWindow.title("Choose a kind of Feature Extraction...")
+    featureWindow.geometry("300x300")
+
+    featureOption = IntVar()
+    featureOption.set(0)
+
+    Radiobutton(featureWindow, text="Individual Color Channels", variable=featureOption, value=1, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Individual Color Features", variable=featureOption, value=2, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Show Bulk Color Feature Extraction", variable=featureOption, value=3, width=30).pack(anchor=W, side="top")
+
+    Button(featureWindow, text="Get Features and Show", width=50, bg='gray',
+        command=lambda: executeFeatureChoice(intVal=featureOption.get(), show=True)
+    ).pack(anchor=W, side="top")
+    Button(featureWindow, text="Get Features and Save", width=50, bg='gray',
+        command=lambda: executeFeatureChoice(intVal=featureOption.get(), show=False)
+    ).pack(anchor=W, side="top")
+    Button(featureWindow, text="Close Plots", width=50, bg='gray',
+        command=lambda: ( plt.close("Feature Extractions") )
+    ).pack(anchor=W, side="top")
+    
+###
+
+def executeFeatureChoice(intVal, show):
+    # print("Inside executeFeatureChoice()")
+    fig = plt.figure(num="Feature Extractions", figsize=(15, 6))
+    plt.clf() # Should clear last plot but keep window open? 
+
+    numRows = 1; numColumns = 2
+
+    if (intVal == 1):
+        # global color feature extraction
+        window.filename = openGUI("Select an Image...")
+
+        success, img= imageToColourRGB(window.filename)
+
+        if (success):
+            # matplotlib uses RGB, so we must read it in with matplotlib.
+            # opencv uses BGR...
+            matplotlibImage = img
+
+            numRows = 2; numColumns = 4
+
+            imgArray = [matplotlibImage, getRedChannel(matplotlibImage), getGreenChannel(matplotlibImage), getBlueChannel(matplotlibImage), 
+                        matplotlibImage, getRedChannel(matplotlibImage), getGreenChannel(matplotlibImage), getBlueChannel(matplotlibImage) ]
+            labelArray = ["Original", "Red Channel as red", "Green Channel as green", "Blue Channel as blue", 
+                        "Original", "Red Channel as gray", "Green Channel as gray", "Blue Channel as gray"]
+            colourArray = ["gray", "Reds", "Greens", "Blues", "gray", "gray", "gray", "gray"]
+
+            if (show):
+                plotColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns)
+            else:
+                success = saveColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns, 
+                                            "Features_Individual_Images", "ColourMapsOf_" + getFileName(window.filename))
+                if (success):
+                    tellUser("Image Saved successfully", labelUpdates)
+                else:
+                    tellUser("Unable to Save File...", labelUpdates)
+        else:
+            tellUser("Unable to Get Colour Image for Feature Window...", labelUpdates)
+    
+    elif (intVal == 2):
+        # individual colour features
+        window.filename = openGUI("Select an Image...")
+
+        success, img= imageToColourRGB(window.filename)
+        if (success):
+            colour_info = getColourInfo(img) # returns a 3D list
+
+            if (show):
+                plotMask(fig, img, colour_info, window.filename, "Colour Features ")
+
+                plt.show()
+            else:
+                 # create directory
+                currentDirectory = getcwd()
+                destinationFolder = currentDirectory + "\\" + "Individual_Reference_Materials"
+                try:
+                    mkdir(destinationFolder)
+                except FileExistsError as uhoh:
+                    pass
+                except Exception as uhoh:
+                    print("New Error:", uhoh)
+                    pass
+                
+                fileName = getImageName(getFileName(window.filename)) + ".txt"
+                rowString = ""
+
+                for i in range(len(colour_info)):
+                    for j in range(len(colour_info[0])):
+                        for k in range(len(colour_info[0][0])):
+                            rowString += str(colour_info[i][j][k]) + " "
+                    rowString += "\n"
+
+                # print(destinationFolder, ":::", destinationFolder + "\\" + fileName)
+
+                file = open(destinationFolder + "\\" + fileName, "w+")
+                file.write(rowString[ : -2]) # ignore last 2 chars
+                file.close()
+
+                 # check if desiredFile exists
+                desiredFile = destinationFolder + "\\" + fileName
+                if ( not exists(desiredFile) ):
+                    tellUser("Unable to save file...", labelUpdates)
+                else:
+                    tellUser("Saved Successfully!", labelUpdates)
+
+        
+        else:
+            tellUser("Unable to get Colour Image for Colour features...", labelUpdates)
+
+    elif (intVal == 3):
+        # display reference info
+        if (show):
+            displayColourTrends()
+        else:
+            # check if desiredFile exists
+            desiredFile = "Reference_Materials\\all_resized_pictures_colour_features.txt"
+            if ( not exists(desiredFile) ):
+                folderName = "Resized_Notes_DataSet"
+                array = getClustersOfImages(folderName)
+                save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+            
+            success = saveColourTrends()
+            if(success):
+                tellUser("File Saved Successfully", labelUpdates)
+            else:
+                tellUser("Unable to Save...", labelUpdates)
+
+
+    else:
+        # should never execute
+        tellUser("Select an option...", labelUpdates)
+    
+###
+
+def getRedChannel(matplotlibImage):
+    return matplotlibImage[ : ,  : , 0]
+##
+
+def getGreenChannel(matplotlibImage):
+    return matplotlibImage[ : ,  : , 1]
+##
+
+def getBlueChannel(matplotlibImage):
+    return matplotlibImage[ : ,  : , 2]
+##
+
+def imageToColourBGR(name):
+    try:
+        if name.endswith(".gif"):
+            success, image = getGIF(name)
+        elif name.endswith(".raw"):
+            success, image = getRAW(name)
+        else:
+            success, image = True, cv2.imread(name, cv2.IMREAD_COLOR)
+
+        if (success):
+            return True, image
+        else:
+            return False, NoneType
+
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
+###
+
+def imageToColourRGB(name):
+    try:
+        # convert, save. Then read, delete
+        success, temp = imageToColourBGR(name)
+        if (success):
+            # print("Working:")
+            cv2.imwrite("temp.jpg", temp)
+            image = plt.imread("temp.jpg")
+            remove("temp.jpg")
+
+        else:
+            return False, NoneType
+
+        return True, image
+
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        return False, NoneType
+###
+
+'''
+    This function takes an image and returns a 3D array, 
+    containing Average values and Mode Values for each
+    colour channel:
+
+    [
+	    [ ["Red Average", "Red Mode"], 		["Value1", "Value2"] ],
+	    [ ["Green Average", "Green Mode"], 	["Value1", "Value2"] ],
+	    [ ["Blue Average", "Blue Mode"], 	["Value1", "Value2"] ]
+    ]
+'''
+def getColourInfo(img):
+    red, green, blue = img[ : ,  : , 0], img[ : ,  : , 1], img[ : ,  : , 2]
+    globalAverages = [np.average(red), np.average(blue), np.average(green)]
+
+    globalModes = []
+    tempArray = [img[ : ,  : , 0], img[ : ,  : , 1], img[ : ,  : , 2]]
+    for i in range(3):
+        #find unique values in array along with their counts
+        vals, counts = np.unique(tempArray[i], return_counts=True)
+
+        #find mode - mode_value is the index
+        mode_value = np.argwhere(counts == np.max(counts))
+
+        # append corresponding value, [][][] Because of image shape - only 1 value contained inside
+        globalModes.append(vals[mode_value][0][0])
+
+    # stick them together!
+    answer = []
+    labels = ["Red", "Green", "Blue"]
+    tempArray = []
+    for i in range(3):
+        tempArray =  [ [labels[i] + " Average", labels[i] + " Mode"] ]
+        tempArray.append( [ globalAverages[i] , globalModes[i] ] )
+
+        answer.append(tempArray)
+
+    return answer
+###
+
+'''
+    Assume that the folderName exists and contains 55 different
+    bills.
+
+    This function creates and returns a 3D array in the following way:
+
+    [
+	    [ 
+          ["Name1", Name2", ..., "Name10", "Name11"],
+	      ["Red Average 1", "Red Average 2", ..., "Red Average 10", Red Average 11"],
+	      ["Green Average 1", "Green Average 2", ..., "Green Average 10", Green Average 11"],
+          ["Blue Average 1", "Blue Average 2", ..., "Blue Average 10", Blue Average 11"],
+          ["Red Mode 1", "Red Mode 2", ..., "Red Mode 10", Red Mode 11"],
+          ["Green Mode 1", "Green Mode 2", ..., "Green Mode 10", Green Mode 11"],
+          ["Blue Mode 1", "Blue Mode 2", ..., "Blue Mode 10", Blue Mode 11"], 
+        ],
+        
+        ...
+    ]
+'''
+def getClustersOfImages(folderName):
+    currentDir = getcwd()
+    path = walk(currentDir + "\\" + folderName)
+
+    resizedDirectory = "Resized_Notes_DataSet"
+
+    # create desiredFile
+    if ( not exists(currentDir + "\\" + resizedDirectory) ):
+        # CONDUCT BULK RESIZE
+        (x, y) = (512, 1024)
+        bulkResize(x, y)
+
+    answerArray, tempNames = [], []
+    redAverages, greenAverages, blueAverages = [], [], []
+    redModes, greenModes, blueModes = [], [], [] 
+    count = 0
+    for root, directories, files in path:
+        for file in files:
+
+            # every 11 pictures, add lists to answerArray
+            if (count % 11 == 0) and (count != 0):
+                answerArray.append( [tempNames, redAverages, greenAverages, blueAverages, redModes, greenModes, blueModes ] )
+                
+                # reset
+                tempNames = []
+                redAverages, greenAverages, blueAverages = [], [], []
+                redModes, greenModes, blueModes = [], [], [] 
+
+            
+            # get features from file
+            temp = currentDir + "\\" + folderName + "\\" + file
+            success, img = imageToColourRGB(temp)
+            if (success):
+                # recall that features is a 3D array - positions of data is known in advance
+                features = getColourInfo(img)
+                # print(features)
+
+                tempNames.append(file)
+                redAverages.append(features[0][1][0]); greenAverages.append(features[1][1][0]); blueAverages.append(features[2][1][0])
+                redModes.append(   features[0][1][1]); greenModes.append(   features[1][1][1]); blueModes.append(   features[2][1][1])
+            else:
+                print(file, "Could not be read in colour...")
+                break
+                
+            count += 1
+    
+    # after for loop runs - need 1 more entry added
+    answerArray.append( [tempNames, redAverages, greenAverages, blueAverages, redModes, greenModes, blueModes ] )
+
+    return answerArray
+###
+
+def save3DArray(array, folderName, fileName):
+
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + folderName
+
+     # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    # create string for text file; Recall array is 3D
+    rowString = ""
+    for a in range(len(array)):
+        for b in range(len(array[0])):
+            for c in range(len(array[0][0])):
+                rowString += str(array[a][b][c]) + " "
+
+            rowString.strip()
+            rowString += "\n"
+
+        # rowString += "\n"
+
+    file = open(destinationFolder + "\\" + fileName, "w+")
+    file.write(rowString[ : -2]) # ignore last 2 chars
+    file.close()
+###
+
+'''
+    This function will use the existing cluster of colour features, and
+    print the results in a human digestible format
+'''
+def getColourTrends():
+    # 1) assume "resized_Notes_DataSet" exists
+    
+    # 2) check if desiredFile exists
+    desiredFile = "Reference_Materials\\all_resized_pictures_colour_features.txt"
+    if ( not exists(desiredFile) ):
+        folderName = "Resized_Notes_DataSet"
+        array = getClustersOfImages(folderName)
+        save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+
+    # 3) read in data from desiredFile
+    with open(desiredFile) as f:
+        lines = f.readlines()
+    
+    # should have 5*7 sets of data
+    counter = 0
+    average, variation = 0.0, 0.0
+    answerArray, tempArray = [], []
+    labelArray = ["R10", "R20", "R50", "R100", "R200"]
+    colourArray = ["Red", "Green", "Blue"]
+    valueArray = ["Average", "Average", "Average", "Mode", "Mode", "Mode"]
+    labelIndex, colourIndex, valueIndex = 0, 0, 0
+
+    # 4) create vectors
+    for line in lines:
+        # skip these rows
+        if (counter == 0):
+            counter += 1
+            continue
+
+        if (counter % 7 == 0):
+            answerArray.append( [labelArray[labelIndex], tempArray] )
+            tempArray = []
+
+            labelIndex += 1
+            counter += 1
+            continue
+
+        # print(line[:-1]) # remove final newline char
+        array = np.array(line[:-1].split())
+        float_array = array.astype(float)
+
+        # get average of the array's elements
+        average = np.average(float_array)
+        variation = (np.max(float_array, axis=0) - np.min(float_array, axis=0)) / 2
+
+        # print(array, ":::", average, variation)
+
+        myString = colourArray[colourIndex] + " " + valueArray[valueIndex]
+        tempArray.append([myString, average, variation])
+
+        counter += 1
+        colourIndex = (colourIndex + 1) % 3 # keep cycling between 3 colours
+        valueIndex = (valueIndex + 1) % 6
+
+    # after for loop runs - need 1 more entry added
+    answerArray.append( [labelArray[labelIndex], tempArray] )
+
+    # print(answerArray)
+    # print("Yay")
+    # 5) return to user
+    return answerArray
+###
+
+'''
+    Opens and shows all_resized_pictures_colour_features.txt to user
+'''
+def displayColourTrends():
+    array = getColourTrends()
+
+    temp = []
+
+    for a in range(len(array)):
+        print(array[a][0]) # print "R10", etc.
+        for b in range(1, len(array[0])):
+            for c in range(0, len(array[0][1])):
+                temp =array[a][b][c]
+
+                print(temp[0], ": ", temp[1], ", Variation: ", temp[2], sep="")
+        print()
+###
+
+def saveColourTrends():
+    # print()
+    folderName = "Reference_Materials"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + folderName
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    array = getColourTrends()
+
+    rowString = ""
+    for a in range(len(array)):
+        rowString += str(array[a][0]) + "\n" # print "R10", etc.
+        for b in range(1, len(array[0])):
+            for c in range(0, len(array[0][1])):
+                temp =array[a][b][c]
+                rowString += str(temp[0]) + " " + str(temp[1]) + " " + str(temp[2]) + "\n"
+
+        # rowString += "\n"
+
+    fileName = "colour_trends.txt"
+    file = open(destinationFolder + "\\" + fileName, "w+")
+    file.write(rowString[ : -1]) # ignore last char
+    file.close()
+
+    # see if successfulorientation
+    if (exists(destinationFolder + "\\" + fileName)):
+        return True
+    else:
+        return False
+###
+
+
+#------------------------------------------------------------------------------------Picture Alignment Functions Below----------
+
+def chooseOrientation():
+    # Open new window to choose enhancement
+    orientationWindow = Toplevel(window)
+    orientationWindow.title("Choose an option...")
+    orientationWindow.geometry("300x400")
+
+    orientationOption = IntVar()
+    orientationOption.set(0)
+
+    Radiobutton(orientationWindow, text="Find Orientation of Image", variable=orientationOption, value=1).pack(anchor=W, side="top")
+    Radiobutton(orientationWindow, text="Show Orientation and Contours", variable=orientationOption, value=2).pack(anchor=W, side="top")
+    Radiobutton(orientationWindow, text="Automatically Align Image and Show", variable=orientationOption, value=3).pack(anchor=W, side="top")
+    Radiobutton(orientationWindow, text="Automatically Align Image and Save", variable=orientationOption, value=4).pack(anchor=W, side="top")
+
+    Button(orientationWindow, text="Find Orientation", width=35, bg='gray',
+        command=lambda: executeOrientationOption(intVal=orientationOption.get()) 
+    ).pack()
+    Button(orientationWindow, text="Close Plots", width=35, bg='gray',
+        command=lambda: ( plt.close("Orientations") )
+    ).pack()
+###
+
+def executeOrientationOption(intVal):
+    # print("Inside executeOrientationOption()")
+
+    window.filename = openGUI("Select an Image...")
+
+    # BGR because OpenCv Functions
+    success, image = imageToColourBGR(window.filename)
+
+    if (success):
+        # get grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # attempt to create white rectangle, notice threshold values
+        ret, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+
+        # returns all contours of thresholded image
+        imageContours = getImageContours(thresh)
+
+        # This is the image detected (default is -90)
+        angle = getSkewAngle(imageContours)
+
+        if (intVal == 1) or (intVal == 2):
+            # Find orientation only
+            demoPic = np.copy(image) # need to copy, otherwise passing by reference
+            label = "Orientation"
+
+            if (intVal == 2):
+                # Show Contours
+                drawAllContours(demoPic, imageContours)
+                label += " and Contours"
+            
+            drawOrientation(demoPic, imageContours)
+
+            fig = plt.figure(num="Orientations", figsize=(8, 4))
+            plt.clf() # Should clear last plot but keep window open?
+
+            numRows = 1
+            numColumns = 2
+            modifiedImageArray = [BGR_to_RGB(image), BGR_to_RGB(demoPic)]
+            labelArray = ["Original Image", label]
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        
+        elif (intVal == 3) or (intVal == 4):
+            # automatically align
+
+            # notice rule for inverse rotation
+            rotatedImage = rotateImage(image, -1 * (90 + angle))
+
+            grayStraight = cv2.cvtColor(rotatedImage, cv2.COLOR_BGR2GRAY)
+            # attempt to create white rectangle, notice threshold values
+            ret, thresh2 = cv2.threshold(grayStraight, 1, 255, cv2.THRESH_BINARY)
+            imageContoursStraight = getImageContours(thresh2)
+
+            cropDimensions = findBestCropDimensions(imageContoursStraight)
+
+            croppedPic = cropAnImage(rotatedImage, cropDimensions)
+
+            # Default Resize values
+            (x, y) = (512, 1024)
+            resizedPic = cv2.resize(croppedPic, (y, x)) # note order
+            
+            if (intVal == 4):
+                # automatically align and save
+                folder = "Aligned_Individual_Images"
+                imgPath = window.filename
+                print("FileName", window.filename)
+                imgNameToAppend = "Realigned_"
+                success = saveFile(folder, imgPath, imgNameToAppend, resizedPic)
+
+                if (success):
+                    tellUser("File saved successfully!", labelUpdates)
+                else:
+                    tellUser("Unable to save file in Orientation Window...", labelUpdates)
+
+            else:
+                fig = plt.figure(num="Orientations", figsize=(8, 4))
+                plt.clf() # Should clear last plot but keep window open?
+
+                numRows = 2
+                numColumns = 2
+                modifiedImageArray = [BGR_to_RGB(image), BGR_to_RGB(rotatedImage), 
+                                        BGR_to_RGB(croppedPic), BGR_to_RGB(resizedPic)]
+                labelArray = ["Original Image", "Rotated Image", "Cropped Image", "Resized Image"]
+
+                plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        
+        else:
+            tellUser("Please select an option", labelUpdates)
+    else:
+        tellUser("Unable to get BGR image for Orientation window...", labelUpdates)
+###
+
+# returns angle of largest rectangle
+def getSkewAngle(imageContours):
+    angle = -1
+    maxArea = -1
+    bestArray = [[[]]]
+
+    # i is index, c is the 3D array
+    for i, c in enumerate(imageContours):
+        # Calculate the area of each contour
+        area = cv2.contourArea(c)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+
+        if (maxArea < area):
+            maxArea = area
+            bestArray = c
+
+    # Find the orientation of each shape
+    angle = getOrientation(bestArray)
+
+    return angle
+###
+
+def findBestCropDimensions(contours):
+    best_box = [-1, -1, -1, -1]
+
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        if best_box[0] < 0:
+            best_box = [x, y, x+w, y+h]
+        else:
+            if x < best_box[0]:
+                best_box[0] = x
+            if y < best_box[1]:
+                best_box[1] = y
+            if x+w > best_box[2]:
+                best_box[2] = x+w
+            if y+h > best_box[3]:
+                best_box[3] = y+h
+
+    return best_box
+###
+
+def cropAnImage(image, dimensions):
+    a, b, c, d = dimensions[0], dimensions[1], dimensions[2], dimensions[3]
+    # OPTIONAL, slight narrowing
+    value = 6
+    a, b, c, d = a+value, b+value, c-value, d-value
+    cropped = image[ b:d , a:c ]
+
+    return cropped
+###
+
+def rotateImage(img, angle):
+    # Rotate an Image
+    rotated = rotate(img, angle)
+    return rotated
+###
+
+def getImageContours(img):
+    contours, hierarchy = cv2.findContours(
+        img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    return contours
+###
+
+'''
+    This functions uses Principal Component Analysis to reliably 
+    detect the orientation of an object.
+
+    draw: Boolean --> add to place info on image
+    If draw == True, the image will have the orientation
+    information placed on it.
+'''
+def getOrientation(pts):
+    # [pca]
+    # Construct a buffer used by the pca analysis
+    sz = len(pts)
+    data_pts = np.empty((sz, 2), dtype=np.float64)
+    for i in range(data_pts.shape[0]):
+        data_pts[i, 0] = pts[i, 0, 0]
+        data_pts[i, 1] = pts[i, 0, 1]
+
+    # Perform PCA analysis
+    mean = np.empty((0))
+    mean, eigenvectors, eigenvalues = cv2.PCACompute2(data_pts, mean)
+
+    # orientation in radians
+    angle = atan2(eigenvectors[0, 1], eigenvectors[0, 0])
+    # [visualization]
+    # print((-int(np.rad2deg(angle)) - 90))
+
+    return (-(int(np.rad2deg(angle)) % 360) - 90) 
+###
+
+# img passed by reference
+def drawOrientation(img, contours):
+    for index, pts in enumerate(contours):
+        area = cv2.contourArea(pts)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+        # [pca]
+        # Construct a buffer used by the pca analysis
+        sz = len(pts)
+        data_pts = np.empty((sz, 2), dtype=np.float64)
+        for i in range(data_pts.shape[0]):
+            data_pts[i, 0] = pts[i, 0, 0]
+            data_pts[i, 1] = pts[i, 0, 1]
+
+        # Perform PCA analysis
+        mean = np.empty((0))
+        mean, eigenvectors, eigenvalues = cv2.PCACompute2(data_pts, mean)
+        # Store the center of the object
+        cntr = (int(mean[0, 0]), int(mean[0, 1]))
+        # [pca]
+
+        angle = atan2(eigenvectors[0, 1], eigenvectors[0, 0])
+        # [visualization]
+        # print((-int(np.rad2deg(angle)) - 90))
+
+        # [visualization]
+        # Draw the principal components
+        cv2.circle(img, cntr, 3, (255, 0, 255), 2)
+        p1 = (cntr[0] + 0.02 * eigenvectors[0, 0] * eigenvalues[0, 0],
+                cntr[1] + 0.02 * eigenvectors[0, 1] * eigenvalues[0, 0])
+        p2 = (cntr[0] - 0.02 * eigenvectors[1, 0] * eigenvalues[1, 0],
+                cntr[1] - 0.02 * eigenvectors[1, 1] * eigenvalues[1, 0])
+        drawAxis(img, cntr, p1, (255, 255, 0), 1)
+        drawAxis(img, cntr, p2, (0, 0, 255), 5)
+
+        # Label with the rotation angle
+        val = (-int(np.rad2deg(angle))- 90)
+        if (val < 0):   val = val % -360
+        else:           val = val % 360
+
+        label = "  Rotation Angle: " + str(val) + " degrees"
+        textbox = cv2.rectangle(
+            img, (cntr[0], cntr[1]-25), (cntr[0] + 250, cntr[1] + 10), (255, 255, 255), -1)
+        cv2.putText(img, label, (cntr[0], cntr[1]),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+###
+
+
+# Draws the Orthogonal Vector onto an image --> Note that Img is passed as reference
+def drawAxis(img, p_, q_, color, scale):
+    p = list(p_)
+    q = list(q_)
+
+    # [visualization1]
+    angle = atan2(p[1] - q[1], p[0] - q[0])  # angle in radians
+    hypotenuse = sqrt((p[1] - q[1]) * (p[1] - q[1]) +
+                      (p[0] - q[0]) * (p[0] - q[0]))
+
+    # Here we lengthen the arrow by a factor of scale
+    q[0] = p[0] - scale * hypotenuse * cos(angle)
+    q[1] = p[1] - scale * hypotenuse * sin(angle)
+    cv2.line(img, (int(p[0]), int(p[1])),
+             (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+
+    # create the arrow hooks
+    p[0] = q[0] + 9 * cos(angle + pi / 4)
+    p[1] = q[1] + 9 * sin(angle + pi / 4)
+    cv2.line(img, (int(p[0]), int(p[1])),
+             (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+
+    p[0] = q[0] + 9 * cos(angle - pi / 4)
+    p[1] = q[1] + 9 * sin(angle - pi / 4)
+    cv2.line(img, (int(p[0]), int(p[1])),
+             (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+###
+
+# image passed by reference
+def drawAllContours(img, imageContours):
+    for i, c in enumerate(imageContours):
+        # Calculate the area of each contour
+        area = cv2.contourArea(c)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+
+        # Draw each contour, for visualisation purposes
+        cv2.drawContours(img, imageContours, i, (0, 0, 255), 2)
+###
+
+def drawLargestContour(img, imageContours):
+    maxArea = -1
+    bestVar = -1
+
+    # i is index, c is the 3D array
+    for i, c in enumerate(imageContours):
+        # Calculate the area of each contour
+        area = cv2.contourArea(c)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+
+        if (maxArea < area):
+            maxArea = area
+            bestVar = i
+
+    # Draw largest contour only, for visualisation purposes
+    cv2.drawContours(img, imageContours, bestVar, (0, 0, 255), 2)
+###
+
+#------------------------------------------------------------------------------------Processing Functions Below-----------------
+
+def chooseProcessingOption():
+    processingWindow = Toplevel(window)
+    processingWindow.title("Please Choose the type of Processing")
+    processingWindow.geometry("300x300")
+
+    processingOption = IntVar()
+    processingOption.set(0)
+    
+    Radiobutton(processingWindow, text="Colour Feature Processing", variable=processingOption, value=1).pack(anchor=W)
+    Radiobutton(processingWindow, text="something", variable=processingOption, value=2).pack(anchor=W)
+    Radiobutton(processingWindow, text="something", variable=processingOption, value=3).pack(anchor=W)
+    Radiobutton(processingWindow, text="something", variable=processingOption, value=4).pack(anchor=W)
+
+    Button(processingWindow, text="Process and Show", width=50, bg='gray',
+        command=lambda: executeProcessingChoice(intVal=processingOption.get(), show = True, save=False)
+    ).pack(anchor=W, side="top")
+    Button(processingWindow, text="Process and Save", width=50, bg='gray',
+        command=lambda: executeProcessingChoice(intVal=processingOption.get(), show = False, save=True)
+    ).pack(anchor=W, side="top")
+###
+
+def executeProcessingChoice(intVal, show, save):
+    if (intVal == 1):
+        window.filename = openGUI("Select an Image...")
+
+        # BGR because OpenCv Functions
+        success, image = imageToColourBGR(window.filename)
+
+        if (success):
+            # colour processing
+            result = processColourPicture(image, show) # result not used here
+        
+            if (save):
+                folder = "Processed_Images"
+                imgPath = window.filename
+                imgNameToAppend = "Processed_"
+                result = processColourPicture(image, False) # BGR pic
+
+                success = saveFile(folder, imgPath, imgNameToAppend, RGB_to_BGR(result) )
+                if (success):
+                    tellUser("Saved successfully!", labelUpdates)
+                else:
+                    tellUser("Unable to save...", labelUpdates)
+
+        else:
+            tellUser("Unable to get Colour image for Processing Window...", labelUpdates)
+    else:
+        tellUser("Please select an option...", labelUpdates)
+###
+
+# returns BGR pic
+def processColourPicture(image, show):
+    # 1) re-align the image - automatically resizes too - returns BGR pic
+    alignedImage = automaticallyAlignImage(image)
+
+    # option 1
+    # 2) Histogram Equalication of - returns BGR
+    colourFixedImage = colourHistogramEqualization(alignedImage)
+
+    # 3) remove possible Noise
+    deNoisedImage = removeNoiseColour(colourFixedImage)
+
+    answer = deNoisedImage
+
+    # # option 2 --> NOT RECOMMENDED
+    # # 2) remove possible Noise
+    # deNoisedImage = removeNoiseColour(alignedImage)
+
+    # # 3) Histogram Equalication of - returns BGR
+    # colourFixedImage = colourHistogramEqualization(deNoisedImage)
+
+    # answer = colourFixedImage
+
+    if (show):
+        fig = plt.figure(num="Processing", figsize=(8, 4))
+        plt.clf() # Should clear last plot but keep window open?
+
+        numRows = 2
+        numColumns = 2
+        modifiedImageArray = [BGR_to_RGB(image), alignedImage, colourFixedImage, answer]
+        labelArray = ["Original Image", "Aligned Image", "Histogram Equalized Image", "De Noised Image"]
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+
+        return NoneType
+    else:
+        return answer
+###
+
+def automaticallyAlignImage(image):
+    # get grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # attempt to create white rectangle, notice threshold values
+    ret, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+
+    # returns all contours of thresholded image
+    imageContours = getImageContours(thresh)
+
+    # This is the image detected (default is -90)
+    angle = getSkewAngle(imageContours)
+
+    # notice rule for inverse rotation
+    rotatedImage = rotateImage(image, -1 * (90 + angle))
+
+    grayStraight = cv2.cvtColor(rotatedImage, cv2.COLOR_BGR2GRAY)
+    # attempt to create white rectangle, notice threshold values
+    ret, thresh2 = cv2.threshold(grayStraight, 1, 255, cv2.THRESH_BINARY)
+    imageContoursStraight = getImageContours(thresh2)
+
+    cropDimensions = findBestCropDimensions(imageContoursStraight)
+
+    croppedPic = cropAnImage(rotatedImage, cropDimensions)
+
+    # Default Resize values
+    (x, y) = (512, 1024)
+    resizedPic = cv2.resize(croppedPic, (y, x)) # note order
+
+    return RGB_to_BGR(resizedPic)
+###
+
+def colourHistogramEqualization(image):
+    yuv_image = BGR_to_YUV(image)
+    
+    yuv_image[:,:,0] = cv2.equalizeHist(yuv_image[:,:,0])
+
+    img_output = YUV_to_BGR(yuv_image)
+
+    return img_output
+###
+
+def removeNoiseColour(img):
+    dst = cv2.fastNlMeansDenoisingColored(img,None,20,20,7,21)
+
+    return dst
+###
+
+def BGR_to_RGB(image):
+    code = cv2.COLOR_BGR2RGB
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def BGR_to_YUV(image):
+    code = cv2.COLOR_BGR2YUV
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def RGB_to_BGR(image):
+    code = cv2.COLOR_RGB2BGR
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def YUV_to_BGR(image):
+    code = cv2.COLOR_YUV2BGR
+    dst = cv2.cvtColor(image, code)
+
+    return dst
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
@@ -2764,6 +4034,11 @@ def getFileName(path):
     return path[ backslashLocation + 1 : ]
 ###
 
+def getImageName(path):
+    fullstopLocation = path.rfind(".")
+    return path[ : fullstopLocation ]
+###
+
 # allows for any number of images to be placed in a grid
 def plotImagesSideBySide(fig, imgArray, labelArray, numRows, numColumns):
     for i in range(len(imgArray)):
@@ -2776,6 +4051,55 @@ def plotImagesSideBySide(fig, imgArray, labelArray, numRows, numColumns):
     plt.show()
 
     tellUser("Changes displayed...", labelUpdates)
+###
+
+# allows for any number of images to be placed in a grid, with individual colour mappings
+# it is ideal to read the images via matplotlib though, as Opencv does BGR, Matplotlib does RGB
+def plotColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns):
+    for i in range(len(imgArray)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.imshow(imgArray[i], cmap=colourArray[i])
+        plt.title(labelArray[i], wrap=True)
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    plt.show()
+###
+
+# allows for any number of images to be placed in a grid, with individual colour mappings
+# it is ideal to read the images via matplotlib though, as Opencv does BGR, Matplotlib does RGB
+def saveColourImagesSideBySide(fig, imgArray, labelArray, colourArray, numRows, numColumns, folderName, fileName):
+
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + folderName
+
+     # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+    
+    # create plot
+    for i in range(len(imgArray)):
+        fig.add_subplot(numRows, numColumns, i+1)
+        plt.imshow(imgArray[i], cmap=colourArray[i])
+        plt.title(labelArray[i], wrap=True)
+        plt.axis('off') #Removes axes
+
+    plt.tight_layout()
+    # matplotlib cannot save as some file types, so always save as jpg
+    plt.savefig(destinationFolder + "\\" + getImageName(fileName) + ".jpg")
+
+    
+
+    # see if successful
+    if (exists(folderName + "\\" + getImageName(fileName) + ".jpg")):
+        return True
+    else:
+        return False
 ###
 
 def saveFile(folder, imgPath, imgNameToAppend, image):
@@ -2792,11 +4116,8 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
         print("New Error:", uhoh)
         pass
     
-    location = destinationFolder + "\\" + imgNameToAppend + getFileName(imgPath)
-
+    location = destinationFolder + "\\" + imgNameToAppend +  getImageName(getFileName(imgPath)) + ".jpg"
     # all converted images need to be jpg (incase .raw / .gif come up - for consistency)
-    fullstop = location.rfind(".")
-    location = location[ : fullstop] + ".jpg"
 
     success = cv2.imwrite(location, image) # True or False
     return success
