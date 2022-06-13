@@ -261,8 +261,8 @@ def conductPrediction():
     predictionOption = IntVar()
     predictionOption.set(0)
     
-    Radiobutton(predictionWindow, text="Colour Feature Prediction", variable=predictionOption, value=1).pack(anchor=W)
-    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=2).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Colour Feature Prediction", variable=predictionOption, value=1).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Colour Feature Prediction", variable=predictionOption, value=2).pack(anchor=W)
     Radiobutton(predictionWindow, text="something", variable=predictionOption, value=3).pack(anchor=W)
     Radiobutton(predictionWindow, text="something", variable=predictionOption, value=4).pack(anchor=W)
 
@@ -277,45 +277,67 @@ def executePredictionChoice(intVal):
     # ensure environment ready to begin
     checkForDependencies()
 
-    window.filename = openGUI("Select an Image...")
+    if (intVal != 2):
+        window.filename = openGUI("Select an Image...")
 
-    # BGR because OpenCv Functions
-    success, image = imageToColourBGR(window.filename)
+        # BGR because OpenCv Functions
+        success, image = imageToColourBGR(window.filename)
 
-    if (success):
-        if (intVal == 1):
-            # Colour Feature Prediction
-            # 1) process colour image
-            processedImage = processColourPicture(image, False)
+        if (success):
+            if (intVal == 1):
+                # Colour Feature Prediction
+                # 1) process colour image
+                processedImage = processColourPicture(image, False)
 
-            colourInfo = getColourInfo(processedImage)
-            # print(colourInfo)
+                colourInfo = getColourInfo(processedImage)
+                # print(colourInfo)
 
-            predictionVector = colourFeaturesComparison(colourInfo)
-            displayPrediction(predictionVector)
+                predictionVector = colourFeaturesComparison(colourInfo)
+                result = explainPrediction(predictionVector)
 
-        # elif (intVal == 2):
-        #     #
+                fig = plt.figure(num="Results", figsize=(10, 4))
+                plt.clf() # Should clear last plot but keep window open?
 
-        # elif (intVal == 3):
-        #     #
+                fig.add_subplot(1, 3, 1)
+                plt.imshow( BGR_to_RGB(image), cmap='gray')
+                plt.title("Original", wrap=True)
+                plt.axis('off') #Removes axes
 
-        # elif (intVal == 3):
-        #     #
+                fig.add_subplot(1, 3, 2)
+                plt.imshow( BGR_to_RGB(processedImage), cmap='gray')
+                plt.title("Processed", wrap=True)
+                plt.axis('off') #Removes axes
 
+                fig.add_subplot(1, 3, 3)
+                plt.text(0.2, 0.5, "Hit Vector revealed prediction of: " + result)
+                # plt.table(cellText=[predictionVector, ["Final Prediction:", "", "", result, "", ""]], loc='center')
+                plt.axis('off') #Removes axes
+
+                plt.show()
+
+            # elif (intVal == 3):
+            #     #
+
+            # elif (intVal == 4):
+            #     #
+
+            else:
+                tellUser("Please select an option", labelUpdates)
         else:
-            tellUser("Please select an option", labelUpdates)
+            tellUser("Unable to open colour image for prediction window...", labelUpdates)
     else:
-        tellUser("Unable to open colour image for prediction window...", labelUpdates)
+        # Bulk Prediction
+        bulkClassification()
 ###
 
-
-# ! Remove later
 def bulkClassification():
     currentDir = getcwd()
-    folder = "MessedUp_Notes_DataSet"
+    # folder = "MessedUp_Notes_DataSet"
+    folder = "Notes_DataSet"
     destinationFolder = currentDir + "\\" + folder
     path = walk(destinationFolder)
+
+    
 
     for root, directories, files in path:
         for file in files:
@@ -323,15 +345,15 @@ def bulkClassification():
 
             # cv2.imshow("JJ", image)
             # cv2.waitKey(0)
-
-            processedImage = processColourPicture(image, False)
+            processedImage = image 
+            # processedImage = processColourPicture(image, False)
 
             colourInfo = getColourInfo(processedImage)
-            print("\n", colourInfo)
+            # print("\n", colourInfo)
 
             predictionVector = colourFeaturesComparison(colourInfo)
-            print(file, "\n", predictionVector, "\n-->" , end="")
-            displayPrediction(predictionVector)
+            result = explainPrediction(predictionVector)
+            print(file, ":::::", predictionVector, ":::::", result)
             print()
 ###
 
@@ -340,15 +362,16 @@ def most_common(lst):
     return max(set(lst), key=lst.count)
 ###
 
-def displayPrediction(predictionVector):
+def explainPrediction(predictionVector):
     result = most_common(predictionVector)
 
-    print("This bill is likely a ******--", result, "--******", sep="")
+    return (result)
+    # print("This bill is likely a ******--", result, "--******", sep="")
 ###
 
 # this function gets the reference values, and calculates the best result for each image
 def colourFeaturesComparison(colourFeatures):
-    print("inside colourFeaturesComparison")
+    # print("inside colourFeaturesComparison")
     # print(colourFeatures)
 
     # 1) get references
@@ -468,54 +491,70 @@ def getColourVectors():
 ###
 
 def checkForDependencies():
-    desiredFolder = "Reference_Materials"
-    desiredFile = "all_resized_pictures_colour_features.txt"
-    
-    # create desiredFile
-    if ( not exists(desiredFolder + "\\" + desiredFile) ):
-        folderName = "Resized_Notes_DataSet"
-        array = getClustersOfImages(folderName)
-        save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
 
-    desiredFolder = "Reference_Materials"
-    desiredFile = "colour_trends.txt"
-
-    if ( not exists(desiredFolder + "\\" + desiredFile) ):
-        saveColourTrends()
-
-    desiredFolder = "Resized_Notes_DataSet"
-
-    # create desiredFolder
-    if ( not exists(desiredFolder) ):
-        currentDir = getcwd()
-        destinationFolder = currentDir + "\\" + desiredFolder
-
-         # create directory
-        try:
-            mkdir(destinationFolder)
-        except FileExistsError as uhoh:
-            pass
-        except Exception as uhoh:
-            print("New Error:", uhoh)
-            pass
-    
+    # ! TODO --> Look for Notes DataSet
     # ensure 55 pictures present
     currentDir = getcwd()
     folder = "Notes_DataSet"
     path = walk(currentDir + "\\" + folder)
-    destinationFolder = currentDir + "\\Resized_Notes_DataSet"
 
     count1 = 0
     for root, directories, files in path:
         for file in files:
             count1 += 1
-
-    if (count1 < 55):
-        # CONDUCT BULK RESIZE
-        (x, y) = (512, 1024)
-        bulkResize(x, y)
     
-    # ! TODO --> Check for mess up images
+    if (count1 >= 55):
+        # only progress if Notes_DataSet is present
+        desiredFolder = "Reference_Materials"
+        desiredFile = "all_resized_pictures_colour_features.txt"
+        
+        # create desiredFile
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            folderName = "Resized_Notes_DataSet"
+            array = getClustersOfImages(folderName)
+            save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+
+        desiredFolder = "Reference_Materials"
+        desiredFile = "colour_trends.txt"
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveColourTrends()
+
+        desiredFolder = "Resized_Notes_DataSet"
+
+        # create desiredFolder
+        if ( not exists(desiredFolder) ):
+            currentDir = getcwd()
+            destinationFolder = currentDir + "\\" + desiredFolder
+
+            # create directory
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+        
+        # ensure 55 pictures present
+        currentDir = getcwd()
+        folder = "Notes_DataSet"
+        path = walk(currentDir + "\\" + folder)
+        destinationFolder = currentDir + "\\Resized_Notes_DataSet"
+
+        count1 = 0
+        for root, directories, files in path:
+            for file in files:
+                count1 += 1
+
+        if (count1 < 55):
+            # CONDUCT BULK RESIZE
+            (x, y) = (512, 1024)
+            bulkResize(x, y)
+        
+        # ! TODO --> Check for mess up images
+    else:
+        tellUser("Please load the Data-Set, provided by the authors!")
 ###
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
 
@@ -4085,4 +4124,3 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
 ###
 
 bulkClassification()
-

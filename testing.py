@@ -111,3 +111,30 @@ import cv2
 
 # plt.tight_layout() # Prevents title overlap in display
 # plt.show()
+
+
+import matplotlib.pyplot as plt
+import cv2
+
+fig = plt.figure(num="Enhancement", figsize=(10, 4))
+plt.clf() # Should clear last plot but keep window open? 
+
+file1 = "MessedUp_Notes_DataSet\\MessedUp_Resized_050_back_youngMandela_1.jpg"
+img1 = plt.imread(file1)
+file2 = "Processed_Images\\Processed_MessedUp_Resized_050_back_youngMandela_1.jpg"
+img2 = plt.imread(file2)
+
+numRows = 1; numColumns = 2
+
+fig.add_subplot(numRows, numColumns, 1)
+plt.imshow(img1, cmap='gray')
+plt.title("Original", wrap=True)
+plt.axis('off') #Removes axes
+
+fig.add_subplot(numRows, numColumns, 2)
+plt.imshow(img2, cmap='gray')
+plt.title("Processed", wrap=True)
+plt.axis('off') #Removes axes
+
+plt.tight_layout() # Prevents title overlap in display
+plt.show()
