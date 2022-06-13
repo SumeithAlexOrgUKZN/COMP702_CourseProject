@@ -309,21 +309,40 @@ def executePredictionChoice(intVal):
 ###
 
 
+# ! Remove later
+def bulkClassification():
+    currentDir = getcwd()
+    folder = "MessedUp_Notes_DataSet"
+    destinationFolder = currentDir + "\\" + folder
+    path = walk(destinationFolder)
+
+    for root, directories, files in path:
+        for file in files:
+            success, image = imageToColourBGR(destinationFolder + "\\" + file)
+
+            # cv2.imshow("JJ", image)
+            # cv2.waitKey(0)
+
+            processedImage = processColourPicture(image, False)
+
+            colourInfo = getColourInfo(processedImage)
+            print("\n", colourInfo)
+
+            predictionVector = colourFeaturesComparison(colourInfo)
+            print(file, "\n", predictionVector, "\n-->" , end="")
+            displayPrediction(predictionVector)
+            print()
+###
+
+# finds most common item in list
+def most_common(lst):
+    return max(set(lst), key=lst.count)
+###
+
 def displayPrediction(predictionVector):
-    print(predictionVector)
-    minValue = -1
-    minIndex = -1
-    for i in range(5):
-        # instantiate
-        if (i == 0):
-            minValue = predictionVector[i]; minIndex = i
+    result = most_common(predictionVector)
 
-        if (minValue > predictionVector[i]):
-            minValue = predictionVector[i]; minIndex = i
-    
-    results = ["R10", "R20", "R50", "R100", "R200"]
-
-    print("This bill is likely a ******--", results[minIndex], "--******", sep="")
+    print("This bill is likely a ******--", result, "--******", sep="")
 ###
 
 # this function gets the reference values, and calculates the best result for each image
@@ -337,11 +356,14 @@ def colourFeaturesComparison(colourFeatures):
     # print("Overall values", overallValues, "\n")
 
     globalAverages = []; globalModes = []
+    v1 = []; v2 = [] # variances
     for i in range(len(overallValues)):
         if (i % 2 == 0):
             globalAverages.append(overallValues[i])
+            v1.append(overallVariances[i])
         else:
             globalModes.append(overallValues[i])
+            v2.append(overallVariances[i])
 
     # print(averages, modes, sep="\n\n")
 
@@ -357,14 +379,43 @@ def colourFeaturesComparison(colourFeatures):
     # print(globalModes, "\n", modes)
 
     # Now, lets loop through the 5 sets of data and calculate the score.
-    scoreVector = [0, 0, 0, 0, 0]
-    averageSum = 0; modeSum = 0
-    for i in range(5):
-        for j in range(3):
-            averageSum += abs(float(averages[j]) - float(globalAverages[i][j]))
-            modeSum += abs(float(modes[j]) - float(globalModes[i][j]))
+    scoreVector = []
+    key = ["R010", "R020", "R050", "R100", "R200"]
+    val1, val2 = 0, 0
+    minVal1 = -1; minIndex1 = -1
+    minVal2 = -1; minIndex2 = -1
+    for i in range(3):
+        # scan each row for Averages and Modes
+        for j in range(5):
+            val1 = abs(float(averages[i]) - float(globalAverages[j][i]))
+            val2 = abs(float(modes[i]) - float(globalModes[j][i]))
+
+            # instantiate
+            if (minVal1 == -1):
+                minVal1 = val1; minIndex1 = j
+                minVal2 = val2; minIndex2 = j
+
+            if (val1 < minVal1):
+                minVal1 = val1; minIndex1 = j
+            elif (val2 < minVal2):
+                minVal2 = val2; minIndex2 = j
+
+            # within range
+            # if (val1 < abs(float(globalAverages[i][j])) -float(v1[i][j])):
+            #     averageSum += val1
+            # # within range
+            # if (val2 < abs(float(globalModes[i][j])) -float(v2[i][j])):
+            #     modeSum += val2
+
+        # at this point - the lowest score is the best hit!
+
         # print(averageSum, modeSum)
-        scoreVector[i] = [averageSum + modeSum]
+        scoreVector.append(key[minIndex1])
+        scoreVector.append(key[minIndex2])
+
+        #reset
+        minVal1 = -1; minIndex1 = -1
+        minVal2 = -1; minIndex2 = -1
 
     # print(scoreVector)
     return scoreVector
@@ -4027,3 +4078,7 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
     success = cv2.imwrite(location, image) # True or False
     return success
 ###
+
+
+
+bulkClassification()
