@@ -194,7 +194,7 @@ def chooseExperimentMethod():
     )
     button14 = tk.Button(
         master = buttonFrameBottom1,
-        text = "Mess Up an Image",
+        text = "Randomly Mess Up an Image",
         width = 40,
         height = 5, 
         bg = "silver",
