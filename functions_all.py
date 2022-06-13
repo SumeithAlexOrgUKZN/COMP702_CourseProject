@@ -2605,7 +2605,7 @@ def chooseMessUp():
     success, img = getImage(window.filename)
 
     if (success):
-        # Open new window to choose enhancement
+        
         messUpWindow = Toplevel(window)
         messUpWindow.title("Choose an option...")
         messUpWindow.geometry("300x300")
@@ -2615,7 +2615,7 @@ def chooseMessUp():
         
         Radiobutton(messUpWindow, text="Brighten an Image", variable=messUpOption, value=1).pack(anchor=W)
         Radiobutton(messUpWindow, text="Darken an Image", variable=messUpOption, value=2).pack(anchor=W)
-        Radiobutton(messUpWindow, text="Grow an Image by", variable=messUpOption, value=3).pack(anchanchor=W)
+        Radiobutton(messUpWindow, text="Grow an Image", variable=messUpOption, value=3).pack(anchor=W)
         Radiobutton(messUpWindow, text="Shrink an Image", variable=messUpOption, value=4).pack(anchor=W)
         Radiobutton(messUpWindow, text="Rotate an Image", variable=messUpOption, value=5).pack(anchor=W)
         Radiobutton(messUpWindow, text="Add Gaussian noise to an Image", variable=messUpOption, value=6).pack(anchor=W)
@@ -2624,12 +2624,12 @@ def chooseMessUp():
         Radiobutton(messUpWindow, text="Add Speckle noise to an Image", variable=messUpOption, value=9).pack(anchor=W)
         
         Button(messUpWindow, text="Mess up and Show", width=35, bg='gray',
-            command=executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = True) 
-        ).pack()
+            command=lambda: executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = True) 
+        ).pack(anchor=W)
         Button(messUpWindow, text="Mess up and Save", width=35, bg='gray',
-            command=executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = False) 
-        ).pack()
-        Button(messUpWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack()
+            command=lambda: executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = False) 
+        ).pack(anchor=W)
+        Button(messUpWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack(anchor=W)
         
     else:
         tellUser("Unable to retrieve the image...", labelUpdates)
@@ -2637,31 +2637,34 @@ def chooseMessUp():
 ###
 
 def executeMessUpOption(intVal, img, imgName, show):
-    fig = plt.figure(num="Morphological Changes", figsize=(8, 4))
-    plt.clf() # Should clear last plot but keep window open? 
-
     newImg = [[]]
     newMessage = ""
 
     if (intVal == 1):
-        newImg = chooseNoise(array=binaryArray)
-        newMessage = "Brightened_"
+        lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
+        newImg = brightenImage(img, lightIntensityMatrix)
+        newMessage = "Brighten_" 
+
         
     elif (intVal == 2):
-        newImg = executeErosion(array=binaryArray)
+        lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
+        newImg = darkenImage(img, lightIntensityMatrix)
         newMessage = "Darken_"
         
     elif (intVal == 3):
-        newImg = executeOpening(array=binaryArray)
-        newMessage = "OpenedBinary_"
+        randomScale = random.randint(50, 100)
+        newImg = growImage(img, randomScale)
+        newMessage = "Grow_"
 
     elif (intVal == 4):
-        newImg = executeClosing(array=binaryArray)
-        newMessage = "ClosingBinary_"
+        randomScale = random.randint(50, 100)
+        newImg = shrinkImage(img, randomScale)
+        newMessage = "Shrink_"
     
     elif (intVal == 5):
-        newImg = executeClosing(array=binaryArray)
-        newMessage = "ClosingBinary_"
+        RandomAngle = random.randint(45, 360)
+        newImg = rotateImage(img, RandomAngle)
+        newMessage = "Rotated_"
     
     elif (intVal == 6):                            
         newImg = addNoise(img, "gaussian")
@@ -2680,19 +2683,21 @@ def executeMessUpOption(intVal, img, imgName, show):
         newMessage = "SpeckleNoise_"
 
     if (show):
+        fig = plt.figure(num="Messed Up Changes", figsize=(8, 4))
+        plt.clf() 
         fig.add_subplot(1, 2, 1)
 
-        plt.imshow(binaryArray, cmap='gray')
-        plt.title('Binary Image of '+ getFileName(imgName), wrap=True)
+        plt.imshow(img)
+        plt.title('Image:'+ getFileName(imgName), wrap=True)
 
         fig.add_subplot(1, 2, 2)
-        plt.imshow(newImg, cmap='gray')
+        plt.imshow(newImg)
         plt.title(newMessage + 'of_'+ getFileName(imgName), wrap=True)
 
         plt.show()
     else:
         # save image
-        destinationFolder = "Morphological_Changed_Individual_Images"
+        destinationFolder = "Messed_UP_Individual_Images"
         success = saveFile(destinationFolder, imgName, newMessage, newImg)   
         if (success):
             tellUser("Image Saved successfully", labelUpdates)
