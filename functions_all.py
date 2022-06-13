@@ -288,9 +288,10 @@ def executePredictionChoice(intVal):
             processedImage = processColourPicture(image, False)
 
             colourInfo = getColourInfo(processedImage)
-            print(colourInfo)
+            # print(colourInfo)
 
-            prediction = colourFeaturesComparison(colourInfo)
+            predictionVector = colourFeaturesComparison(colourInfo)
+            displayPrediction(predictionVector)
 
         # elif (intVal == 2):
         #     #
@@ -307,11 +308,111 @@ def executePredictionChoice(intVal):
         tellUser("Unable to open colour image for prediction window...", labelUpdates)
 ###
 
+
+def displayPrediction(predictionVector):
+    print(predictionVector)
+    minValue = -1
+    minIndex = -1
+    for i in range(5):
+        # instantiate
+        if (i == 0):
+            minValue = predictionVector[i]; minIndex = i
+
+        if (minValue > predictionVector[i]):
+            minValue = predictionVector[i]; minIndex = i
+    
+    results = ["R10", "R20", "R50", "R100", "R200"]
+
+    print("This bill is likely a ******--", results[minIndex], "--******", sep="")
+###
+
 # this function gets the reference values, and calculates the best result for each image
 def colourFeaturesComparison(colourFeatures):
     print("inside colourFeaturesComparison")
+    # print(colourFeatures)
 
     # 1) get references
+    overallValues, overallVariances = getColourVectors()
+
+    # print("Overall values", overallValues, "\n")
+
+    globalAverages = []; globalModes = []
+    for i in range(len(overallValues)):
+        if (i % 2 == 0):
+            globalAverages.append(overallValues[i])
+        else:
+            globalModes.append(overallValues[i])
+
+    # print(averages, modes, sep="\n\n")
+
+    # averages and modes are the 1X3 vectors for our image
+    averages = [];modes = []
+
+    for i in range(len(colourFeatures)):
+        averages.append(colourFeatures[i][1][0])
+        modes.append(colourFeatures[i][1][1])
+    
+    # print(globalAverages, "\n", averages)
+    # print()
+    # print(globalModes, "\n", modes)
+
+    # Now, lets loop through the 5 sets of data and calculate the score.
+    scoreVector = [0, 0, 0, 0, 0]
+    averageSum = 0; modeSum = 0
+    for i in range(5):
+        for j in range(3):
+            averageSum += abs(float(averages[j]) - float(globalAverages[i][j]))
+            modeSum += abs(float(modes[j]) - float(globalModes[i][j]))
+        # print(averageSum, modeSum)
+        scoreVector[i] = [averageSum + modeSum]
+
+    # print(scoreVector)
+    return scoreVector
+###
+
+def getColourVectors():
+    # read in data from desiredFile
+    desiredFile = "Reference_Materials" + "\\" + "colour_trends.txt"
+
+    with open(desiredFile) as f:
+        lines = f.readlines()
+    
+    counter = 0
+    valueArray = [[]]
+    varianceArray = [[]]
+    tempValues = []; tempVariances = []
+    dataArray = []
+    for i in range(len(lines)):
+        # skip first part of these paragraphs
+        if (i == 0) or (i % 7 == 0):
+            continue
+            
+        # append
+        if (counter % 3 == 0):
+            # skip first run
+            if (counter != 0):
+                valueArray.append(tempValues)
+                varianceArray.append(tempVariances)
+                tempValues = []; tempVariances = [] # reset
+
+        data = lines[i]
+        if (i != len(lines)-1): data = data[:-1] # remove end chars, unless last element
+        dataArray = data.split()
+
+        # print(dataArray)
+        # print("0", dataArray[2])
+        # print("0", dataArray[3])
+
+        tempValues.append(dataArray[2])
+        tempVariances.append(dataArray[3])
+
+        counter += 1
+    
+    # final iteration has more data:
+    valueArray.append(tempValues)
+    varianceArray.append(tempVariances)
+
+    return valueArray[ 1 : ], varianceArray[ 1 : ]
 ###
 
 def checkForDependencies():
