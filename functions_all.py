@@ -13,6 +13,7 @@ Summary:
 #----------------------------------------------------------------------------------------------------------------Packages Below
 
 # Tkinter is the GUI 
+from concurrent.futures import process
 import tkinter as tk
 from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 
@@ -226,10 +227,11 @@ def chooseExperimentMethod():
     )
     button18 = tk.Button(
         master = buttonFrameBottom2,
-        text = "18",
+        text = "Process Individual Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseProcessingOption
     )
     buttonClose = tk.Button(
         master = buttonFrameBottom2,
@@ -279,24 +281,8 @@ def executePredictionChoice(intVal):
     if (success):
         if (intVal == 1):
             # Colour Feature Prediction
-            
-            # 1) re-align the image - automatically resizes too - returns BGR pic
-            alignedImage = automaticallyAlignImage( BGR_to_RGB(image) )
-
-            # cv2.imshow("Aligned Image", alignedImage)
-            # cv2.waitKey(0)
-
-            # 2) Histogram Equalication of - returns BGR
-            colourFixedImage = colourHistogramEqualization(alignedImage)
-
-            # cv2.imshow("Colour Fixed Image", colourFixedImage)
-            # cv2.waitKey(0)
-
-            # 3) remove possible Noise
-            deNoisedImage = removeNoiseColour(colourFixedImage)
-
-            cv2.imshow("De-Noised Image", deNoisedImage)
-            cv2.waitKey(0)
+            # 1) process colour image
+            processedImage = processColourPicture(image, True)
 
         # elif (intVal == 2):
         #     #
@@ -313,81 +299,6 @@ def executePredictionChoice(intVal):
         tellUser("Unable to open colour image for prediction window...", labelUpdates)
 ###
 
-def automaticallyAlignImage(image):
-    # get grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # attempt to create white rectangle, notice threshold values
-    ret, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
-
-    # returns all contours of thresholded image
-    imageContours = getImageContours(thresh)
-
-    # This is the image detected (default is -90)
-    angle = getSkewAngle(imageContours)
-
-    # notice rule for inverse rotation
-    rotatedImage = rotateImage(image, -1 * (90 + angle))
-
-    grayStraight = cv2.cvtColor(rotatedImage, cv2.COLOR_BGR2GRAY)
-    # attempt to create white rectangle, notice threshold values
-    ret, thresh2 = cv2.threshold(grayStraight, 1, 255, cv2.THRESH_BINARY)
-    imageContoursStraight = getImageContours(thresh2)
-
-    cropDimensions = findBestCropDimensions(imageContoursStraight)
-
-    croppedPic = cropAnImage(rotatedImage, cropDimensions)
-
-    # Default Resize values
-    (x, y) = (512, 1024)
-    resizedPic = cv2.resize(croppedPic, (y, x)) # note order
-
-    return RGB_to_BGR(resizedPic)
-###
-
-def colourHistogramEqualization(image):
-    yuv_image = BGR_to_YUV(image)
-    
-    yuv_image[:,:,0] = cv2.equalizeHist(yuv_image[:,:,0])
-
-    img_output = YUV_to_BGR(yuv_image)
-
-    return img_output
-###
-
-def removeNoiseColour(img):
-    dst = cv2.fastNlMeansDenoisingColored(img,None,10,10,7,21)
-
-    return dst
-###
-
-def BGR_to_RGB(image):
-    code = cv2.COLOR_BGR2RGB
-    dst = cv2.cvtColor(image, code)
-
-    return dst
-###
-
-def BGR_to_YUV(image):
-    code = cv2.COLOR_BGR2YUV
-    dst = cv2.cvtColor(image, code)
-
-    return dst
-###
-
-def RGB_to_BGR(image):
-    code = cv2.COLOR_RGB2BGR
-    dst = cv2.cvtColor(image, code)
-
-    return dst
-###
-
-def YUV_to_BGR(image):
-    code = cv2.COLOR_YUV2BGR
-    dst = cv2.cvtColor(image, code)
-
-    return dst
-###
 
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
 
@@ -3651,6 +3562,173 @@ def drawLargestContour(img, imageContours):
 
     # Draw largest contour only, for visualisation purposes
     cv2.drawContours(img, imageContours, bestVar, (0, 0, 255), 2)
+###
+
+#------------------------------------------------------------------------------------Processing Functions Below-----------------
+
+def chooseProcessingOption():
+    processingWindow = Toplevel(window)
+    processingWindow.title("Please Choose the type of Processing")
+    processingWindow.geometry("300x300")
+
+    processingOption = IntVar()
+    processingOption.set(0)
+    
+    Radiobutton(processingWindow, text="Colour Feature Processing", variable=processingOption, value=1).pack(anchor=W)
+    Radiobutton(processingWindow, text="something", variable=processingOption, value=2).pack(anchor=W)
+    Radiobutton(processingWindow, text="something", variable=processingOption, value=3).pack(anchor=W)
+    Radiobutton(processingWindow, text="something", variable=processingOption, value=4).pack(anchor=W)
+
+    Button(processingWindow, text="Process and Show", width=50, bg='gray',
+        command=lambda: executeProcessingChoice(intVal=processingOption.get(), show = True, save=False)
+    ).pack(anchor=W, side="top")
+    Button(processingWindow, text="Process and Save", width=50, bg='gray',
+        command=lambda: executeProcessingChoice(intVal=processingOption.get(), show = False, save=True)
+    ).pack(anchor=W, side="top")
+###
+
+def executeProcessingChoice(intVal, show, save):
+    if (intVal == 1):
+        window.filename = openGUI("Select an Image...")
+
+        # BGR because OpenCv Functions
+        success, image = imageToColourBGR(window.filename)
+
+        if (success):
+            # colour processing
+            result = processColourPicture(image, show) # result not used here
+        
+            if (save):
+                folder = "Processed_Images"
+                imgPath = window.filename
+                imgNameToAppend = "Processed_"
+                result = processColourPicture(image, False) # BGR pic
+
+                success = saveFile(folder, imgPath, imgNameToAppend, RGB_to_BGR(result) )
+                if (success):
+                    tellUser("Saved successfully!", labelUpdates)
+                else:
+                    tellUser("Unable to save...", labelUpdates)
+
+        else:
+            tellUser("Unable to get Colour image for Processing Window...", labelUpdates)
+    else:
+        tellUser("Please select an option...", labelUpdates)
+###
+
+# returns BGR pic
+def processColourPicture(image, show):
+    # 1) re-align the image - automatically resizes too - returns BGR pic
+    alignedImage = automaticallyAlignImage(image)
+
+    # option 1
+    # 2) Histogram Equalication of - returns BGR
+    colourFixedImage = colourHistogramEqualization(alignedImage)
+
+    # 3) remove possible Noise
+    deNoisedImage = removeNoiseColour(colourFixedImage)
+
+    answer = deNoisedImage
+
+    # # option 2 --> NOT RECOMMENDED
+    # # 2) remove possible Noise
+    # deNoisedImage = removeNoiseColour(alignedImage)
+
+    # # 3) Histogram Equalication of - returns BGR
+    # colourFixedImage = colourHistogramEqualization(deNoisedImage)
+
+    # answer = colourFixedImage
+
+    if (show):
+        fig = plt.figure(num="Processing", figsize=(8, 4))
+        plt.clf() # Should clear last plot but keep window open?
+
+        numRows = 2
+        numColumns = 2
+        modifiedImageArray = [BGR_to_RGB(image), alignedImage, colourFixedImage, answer]
+        labelArray = ["Original Image", "Aligned Image", "Histogram Equalized Image", "De Noised Image"]
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+
+        return NoneType
+    else:
+        return answer
+###
+
+def automaticallyAlignImage(image):
+    # get grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # attempt to create white rectangle, notice threshold values
+    ret, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+
+    # returns all contours of thresholded image
+    imageContours = getImageContours(thresh)
+
+    # This is the image detected (default is -90)
+    angle = getSkewAngle(imageContours)
+
+    # notice rule for inverse rotation
+    rotatedImage = rotateImage(image, -1 * (90 + angle))
+
+    grayStraight = cv2.cvtColor(rotatedImage, cv2.COLOR_BGR2GRAY)
+    # attempt to create white rectangle, notice threshold values
+    ret, thresh2 = cv2.threshold(grayStraight, 1, 255, cv2.THRESH_BINARY)
+    imageContoursStraight = getImageContours(thresh2)
+
+    cropDimensions = findBestCropDimensions(imageContoursStraight)
+
+    croppedPic = cropAnImage(rotatedImage, cropDimensions)
+
+    # Default Resize values
+    (x, y) = (512, 1024)
+    resizedPic = cv2.resize(croppedPic, (y, x)) # note order
+
+    return RGB_to_BGR(resizedPic)
+###
+
+def colourHistogramEqualization(image):
+    yuv_image = BGR_to_YUV(image)
+    
+    yuv_image[:,:,0] = cv2.equalizeHist(yuv_image[:,:,0])
+
+    img_output = YUV_to_BGR(yuv_image)
+
+    return img_output
+###
+
+def removeNoiseColour(img):
+    dst = cv2.fastNlMeansDenoisingColored(img,None,20,20,7,21)
+
+    return dst
+###
+
+def BGR_to_RGB(image):
+    code = cv2.COLOR_BGR2RGB
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def BGR_to_YUV(image):
+    code = cv2.COLOR_BGR2YUV
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def RGB_to_BGR(image):
+    code = cv2.COLOR_RGB2BGR
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def YUV_to_BGR(image):
+    code = cv2.COLOR_YUV2BGR
+    dst = cv2.cvtColor(image, code)
+
+    return dst
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
