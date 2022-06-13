@@ -20,11 +20,9 @@ from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 import cv2
 
 from matplotlib import pyplot as plt
-import matplotlib
 
 import numpy as np
 from numpy import r_
-from scipy.ndimage.interpolation import rotate # used in DCT compression
 
 from skimage.segmentation import felzenszwalb # type of segmentation method
 from skimage.feature import canny #region filling
