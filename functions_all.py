@@ -2629,7 +2629,7 @@ def chooseMessUp():
         Button(messUpWindow, text="Mess up and Save", width=35, bg='gray',
             command=lambda: executeMessUpOption(intVal=messUpOption.get(), img=img, imgName=window.filename, show = False) 
         ).pack(anchor=W)
-        Button(messUpWindow, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack(anchor=W)
+        Button(messUpWindow, width=35, text="Close All Plots", bg="gray", command=lambda: (plt.close('all')) ).pack(anchor=W)
         
     else:
         tellUser("Unable to retrieve the image...", labelUpdates)
@@ -2687,11 +2687,11 @@ def executeMessUpOption(intVal, img, imgName, show):
         plt.clf() 
         fig.add_subplot(1, 2, 1)
 
-        plt.imshow(img)
+        plt.imshow( BGR_to_RGB(img) )
         plt.title('Image:'+ getFileName(imgName), wrap=True)
 
         fig.add_subplot(1, 2, 2)
-        plt.imshow(newImg)
+        plt.imshow( BGR_to_RGB(newImg) )
         plt.title(newMessage + 'of_'+ getFileName(imgName), wrap=True)
 
         plt.show()
@@ -3310,4 +3310,11 @@ def saveFile(folder, imgPath, imgNameToAppend, image):
 
     success = cv2.imwrite(location, image) # True or False
     return success
+###
+
+def BGR_to_RGB(image):
+    code = cv2.COLOR_BGR2RGB
+    dst = cv2.cvtColor(image, code)
+
+    return dst
 ###
