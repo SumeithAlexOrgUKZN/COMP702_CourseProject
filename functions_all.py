@@ -42,6 +42,7 @@ from types import NoneType
 
 from os.path import exists
 import random
+from math import atan2, pi, sqrt, cos, sin
 
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
@@ -201,10 +202,11 @@ def chooseExperimentMethod():
     )
     button15 = tk.Button(
         master = buttonFrameBottom1,
-        text = "15",
+        text = "Explore Orientation of an Image",
         width = 40,
         height = 5, 
         bg = "silver",
+        command = chooseOrientation
     )
     button16 = tk.Button(
         master = buttonFrameBottom1,
@@ -3176,11 +3178,346 @@ def saveColourTrends():
     file.write(rowString[ : -1]) # ignore last char
     file.close()
 
-    # see if successful
+    # see if successfulorientation
     if (exists(destinationFolder + "\\" + fileName)):
         return True
     else:
         return False
+###
+
+
+#------------------------------------------------------------------------------------Picture Alignment Functions Below----------
+
+def chooseOrientation():
+    # Open new window to choose enhancement
+    orientationWindow = Toplevel(window)
+    orientationWindow.title("Choose an option...")
+    orientationWindow.geometry("300x400")
+
+    orientationOption = IntVar()
+    orientationOption.set(0)
+
+    Radiobutton(orientationWindow, text="Find Orientation of Image", variable=orientationOption, value=1).pack(anchor=W, side="top")
+    Radiobutton(orientationWindow, text="Show Orientation and Contours", variable=orientationOption, value=2).pack(anchor=W, side="top")
+    Radiobutton(orientationWindow, text="Automatically Align Image and Show", variable=orientationOption, value=3).pack(anchor=W, side="top")
+    Radiobutton(orientationWindow, text="Automatically Align Image and Save", variable=orientationOption, value=4).pack(anchor=W, side="top")
+
+    Button(orientationWindow, text="Find Orientation", width=35, bg='gray',
+        command=lambda: executeOrientationOption(intVal=orientationOption.get()) 
+    ).pack()
+    Button(orientationWindow, text="Close Plots", width=35, bg='gray',
+        command=lambda: ( plt.close("Orientations") )
+    ).pack()
+###
+
+def executeOrientationOption(intVal):
+    print("Inside executeOrientationOption()")
+
+    window.filename = openGUI("Select an Image...")
+
+    # BGR because OpenCv Functions
+    success, image = imageToColourBGR(window.filename)
+
+    if (success):
+        # get grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # attempt to create white rectangle, notice threshold values
+        ret, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+
+        # returns all contours of thresholded image
+        imageContours = getImageContours(thresh)
+
+        # This is the image detected (default is -90)
+        angle = getSkewAngle(imageContours)
+
+        if (intVal == 1) or (intVal == 2):
+            # Find orientation only
+            demoPic = np.copy(image) # need to copy, otherwise passing by reference
+            label = "Orientation"
+
+            if (intVal == 2):
+                # Show Contours
+                drawAllContours(demoPic, imageContours)
+                label += " and Contours"
+            
+            drawOrientation(demoPic, imageContours)
+
+            fig = plt.figure(num="Orientations", figsize=(8, 4))
+            plt.clf() # Should clear last plot but keep window open?
+
+            numRows = 1
+            numColumns = 2
+            modifiedImageArray = [BGR_to_RGB(image), BGR_to_RGB(demoPic)]
+            labelArray = ["Original Image", label]
+
+            plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        
+        elif (intVal == 3) or (intVal == 4):
+            # automatically align
+
+            # notice rule for inverse rotation
+            rotatedImage = rotateImage(image, -1 * (90 + angle))
+
+            grayStraight = cv2.cvtColor(rotatedImage, cv2.COLOR_BGR2GRAY)
+            # attempt to create white rectangle, notice threshold values
+            ret, thresh2 = cv2.threshold(grayStraight, 1, 255, cv2.THRESH_BINARY)
+            imageContoursStraight = getImageContours(thresh2)
+
+            cropDimensions = findBestCropDimensions(imageContoursStraight)
+
+            croppedPic = cropAnImage(rotatedImage, cropDimensions)
+
+            # Default Resize values
+            (x, y) = (512, 1024)
+            resizedPic = cv2.resize(croppedPic, (y, x)) # note order
+            
+            if (intVal == 4):
+                # automatically align and save
+                folder = "Aligned_Individual_Images"
+                imgPath = window.filename
+                print("FileName", window.filename)
+                imgNameToAppend = "Realigned_"
+                success = saveFile(folder, imgPath, imgNameToAppend, resizedPic)
+
+                if (success):
+                    tellUser("File saved successfully!", labelUpdates)
+                else:
+                    tellUser("Unable to save file in Orientation Window...", labelUpdates)
+
+            else:
+                fig = plt.figure(num="Orientations", figsize=(8, 4))
+                plt.clf() # Should clear last plot but keep window open?
+
+                numRows = 2
+                numColumns = 2
+                modifiedImageArray = [BGR_to_RGB(image), BGR_to_RGB(rotatedImage), 
+                                        BGR_to_RGB(croppedPic), BGR_to_RGB(resizedPic)]
+                labelArray = ["Original Image", "Rotated Image", "Cropped Image", "Resized Image"]
+
+                plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+        
+        else:
+            tellUser("Please select an option", labelUpdates)
+    else:
+        tellUser("Unable to get BGR image for Orientation window...", labelUpdates)
+###
+
+def BGR_to_RGB(image):
+    code = cv2.COLOR_BGR2RGB
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+# returns angle of largest rectangle
+def getSkewAngle(imageContours):
+    angle = -1
+    maxArea = -1
+    bestArray = [[[]]]
+
+    # i is index, c is the 3D array
+    for i, c in enumerate(imageContours):
+        # Calculate the area of each contour
+        area = cv2.contourArea(c)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+
+        if (maxArea < area):
+            maxArea = area
+            bestArray = c
+
+    # Find the orientation of each shape
+    angle = getOrientation(bestArray)
+
+    return angle
+###
+
+def findBestCropDimensions(contours):
+    best_box = [-1, -1, -1, -1]
+
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        if best_box[0] < 0:
+            best_box = [x, y, x+w, y+h]
+        else:
+            if x < best_box[0]:
+                best_box[0] = x
+            if y < best_box[1]:
+                best_box[1] = y
+            if x+w > best_box[2]:
+                best_box[2] = x+w
+            if y+h > best_box[3]:
+                best_box[3] = y+h
+
+    return best_box
+###
+
+def cropAnImage(image, dimensions):
+    a, b, c, d = dimensions[0], dimensions[1], dimensions[2], dimensions[3]
+    # OPTIONAL, slight narrowing
+    value = 6
+    a, b, c, d = a+value, b+value, c-value, d-value
+    cropped = image[ b:d , a:c ]
+
+    return cropped
+###
+
+def rotateImage(img, angle):
+    # Rotate an Image
+    rotated = rotate(img, angle)
+    return rotated
+###
+
+def getImageContours(img):
+    contours, hierarchy = cv2.findContours(
+        img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    return contours
+###
+
+'''
+    This functions uses Principal Component Analysis to reliably 
+    detect the orientation of an object.
+
+    draw: Boolean --> add to place info on image
+    If draw == True, the image will have the orientation
+    information placed on it.
+'''
+def getOrientation(pts):
+    # [pca]
+    # Construct a buffer used by the pca analysis
+    sz = len(pts)
+    data_pts = np.empty((sz, 2), dtype=np.float64)
+    for i in range(data_pts.shape[0]):
+        data_pts[i, 0] = pts[i, 0, 0]
+        data_pts[i, 1] = pts[i, 0, 1]
+
+    # Perform PCA analysis
+    mean = np.empty((0))
+    mean, eigenvectors, eigenvalues = cv2.PCACompute2(data_pts, mean)
+
+    # orientation in radians
+    angle = atan2(eigenvectors[0, 1], eigenvectors[0, 0])
+    # [visualization]
+    # print((-int(np.rad2deg(angle)) - 90))
+
+    return (-(int(np.rad2deg(angle)) % 360) - 90) 
+###
+
+# img passed by reference
+def drawOrientation(img, contours):
+    for index, pts in enumerate(contours):
+        area = cv2.contourArea(pts)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+        # [pca]
+        # Construct a buffer used by the pca analysis
+        sz = len(pts)
+        data_pts = np.empty((sz, 2), dtype=np.float64)
+        for i in range(data_pts.shape[0]):
+            data_pts[i, 0] = pts[i, 0, 0]
+            data_pts[i, 1] = pts[i, 0, 1]
+
+        # Perform PCA analysis
+        mean = np.empty((0))
+        mean, eigenvectors, eigenvalues = cv2.PCACompute2(data_pts, mean)
+        # Store the center of the object
+        cntr = (int(mean[0, 0]), int(mean[0, 1]))
+        # [pca]
+
+        angle = atan2(eigenvectors[0, 1], eigenvectors[0, 0])
+        # [visualization]
+        # print((-int(np.rad2deg(angle)) - 90))
+
+        # [visualization]
+        # Draw the principal components
+        cv2.circle(img, cntr, 3, (255, 0, 255), 2)
+        p1 = (cntr[0] + 0.02 * eigenvectors[0, 0] * eigenvalues[0, 0],
+                cntr[1] + 0.02 * eigenvectors[0, 1] * eigenvalues[0, 0])
+        p2 = (cntr[0] - 0.02 * eigenvectors[1, 0] * eigenvalues[1, 0],
+                cntr[1] - 0.02 * eigenvectors[1, 1] * eigenvalues[1, 0])
+        drawAxis(img, cntr, p1, (255, 255, 0), 1)
+        drawAxis(img, cntr, p2, (0, 0, 255), 5)
+
+        # Label with the rotation angle
+        val = (-int(np.rad2deg(angle))- 90)
+        if (val < 0):   val = val % -360
+        else:           val = val % 360
+
+        label = "  Rotation Angle: " + str(val) + " degrees"
+        textbox = cv2.rectangle(
+            img, (cntr[0], cntr[1]-25), (cntr[0] + 250, cntr[1] + 10), (255, 255, 255), -1)
+        cv2.putText(img, label, (cntr[0], cntr[1]),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+###
+
+
+# Draws the Orthogonal Vector onto an image --> Note that Img is passed as reference
+def drawAxis(img, p_, q_, color, scale):
+    p = list(p_)
+    q = list(q_)
+
+    # [visualization1]
+    angle = atan2(p[1] - q[1], p[0] - q[0])  # angle in radians
+    hypotenuse = sqrt((p[1] - q[1]) * (p[1] - q[1]) +
+                      (p[0] - q[0]) * (p[0] - q[0]))
+
+    # Here we lengthen the arrow by a factor of scale
+    q[0] = p[0] - scale * hypotenuse * cos(angle)
+    q[1] = p[1] - scale * hypotenuse * sin(angle)
+    cv2.line(img, (int(p[0]), int(p[1])),
+             (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+
+    # create the arrow hooks
+    p[0] = q[0] + 9 * cos(angle + pi / 4)
+    p[1] = q[1] + 9 * sin(angle + pi / 4)
+    cv2.line(img, (int(p[0]), int(p[1])),
+             (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+
+    p[0] = q[0] + 9 * cos(angle - pi / 4)
+    p[1] = q[1] + 9 * sin(angle - pi / 4)
+    cv2.line(img, (int(p[0]), int(p[1])),
+             (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+###
+
+# image passed by reference
+def drawAllContours(img, imageContours):
+    for i, c in enumerate(imageContours):
+        # Calculate the area of each contour
+        area = cv2.contourArea(c)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+
+        # Draw each contour, for visualisation purposes
+        cv2.drawContours(img, imageContours, i, (0, 0, 255), 2)
+###
+
+def drawLargestContour(img, imageContours):
+    maxArea = -1
+    bestVar = -1
+
+    # i is index, c is the 3D array
+    for i, c in enumerate(imageContours):
+        # Calculate the area of each contour
+        area = cv2.contourArea(c)
+
+        # Ignore contours that are too small
+        if area < 3700:
+            continue
+
+        if (maxArea < area):
+            maxArea = area
+            bestVar = i
+
+    # Draw largest contour only, for visualisation purposes
+    cv2.drawContours(img, imageContours, bestVar, (0, 0, 255), 2)
 ###
 
 #------------------------------------------------------------------------------------Other Functions Below----------------------
