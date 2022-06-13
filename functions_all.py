@@ -18,6 +18,7 @@ from tkinter import filedialog, Toplevel, Radiobutton, IntVar, Button, W, Label
 
 # library for image manipulation
 import cv2
+from cv2 import waitKey
 
 from matplotlib import pyplot as plt
 
@@ -247,6 +248,145 @@ def chooseExperimentMethod():
     button9.pack(side = tk.LEFT); button10.pack(side = tk.LEFT); button11.pack(side = tk.LEFT); button12.pack(side = tk.RIGHT)
     button13.pack(side = tk.LEFT); button14.pack(side = tk.LEFT); button15.pack(side = tk.LEFT); button16.pack(side = tk.RIGHT)
     button17.pack(side = tk.LEFT); button18.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
+###
+
+def conductPrediction():
+    predictionWindow = Toplevel(window)
+    predictionWindow.title("Please Choose the type of Prediction")
+    predictionWindow.geometry("300x300")
+
+    predictionOption = IntVar()
+    predictionOption.set(0)
+    
+    Radiobutton(predictionWindow, text="Colour Feature Prediction", variable=predictionOption, value=1).pack(anchor=W)
+    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=2).pack(anchor=W)
+    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=3).pack(anchor=W)
+    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=4).pack(anchor=W)
+
+    Button(predictionWindow, text="Predict!", width=50, bg='gray',
+        command=lambda: executePredictionChoice(intVal=predictionOption.get())
+    ).pack(anchor=W, side="top")
+###
+
+def executePredictionChoice(intVal):
+    # print("Inside executePredictionChoice()")
+
+    window.filename = openGUI("Select an Image...")
+
+    # BGR because OpenCv Functions
+    success, image = imageToColourBGR(window.filename)
+
+    if (success):
+        if (intVal == 1):
+            # Colour Feature Prediction
+            
+            # 1) re-align the image - automatically resizes too - returns BGR pic
+            alignedImage = automaticallyAlignImage( BGR_to_RGB(image) )
+
+            # cv2.imshow("Aligned Image", alignedImage)
+            # cv2.waitKey(0)
+
+            # 2) Histogram Equalication of - returns BGR
+            colourFixedImage = colourHistogramEqualization(alignedImage)
+
+            # cv2.imshow("Colour Fixed Image", colourFixedImage)
+            # cv2.waitKey(0)
+
+            # 3) remove possible Noise
+            deNoisedImage = removeNoiseColour(colourFixedImage)
+
+            cv2.imshow("De-Noised Image", deNoisedImage)
+            cv2.waitKey(0)
+
+        # elif (intVal == 2):
+        #     #
+
+        # elif (intVal == 3):
+        #     #
+
+        # elif (intVal == 3):
+        #     #
+
+        else:
+            tellUser("Please select an option", labelUpdates)
+    else:
+        tellUser("Unable to open colour image for prediction window...", labelUpdates)
+###
+
+def automaticallyAlignImage(image):
+    # get grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # attempt to create white rectangle, notice threshold values
+    ret, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+
+    # returns all contours of thresholded image
+    imageContours = getImageContours(thresh)
+
+    # This is the image detected (default is -90)
+    angle = getSkewAngle(imageContours)
+
+    # notice rule for inverse rotation
+    rotatedImage = rotateImage(image, -1 * (90 + angle))
+
+    grayStraight = cv2.cvtColor(rotatedImage, cv2.COLOR_BGR2GRAY)
+    # attempt to create white rectangle, notice threshold values
+    ret, thresh2 = cv2.threshold(grayStraight, 1, 255, cv2.THRESH_BINARY)
+    imageContoursStraight = getImageContours(thresh2)
+
+    cropDimensions = findBestCropDimensions(imageContoursStraight)
+
+    croppedPic = cropAnImage(rotatedImage, cropDimensions)
+
+    # Default Resize values
+    (x, y) = (512, 1024)
+    resizedPic = cv2.resize(croppedPic, (y, x)) # note order
+
+    return RGB_to_BGR(resizedPic)
+###
+
+def colourHistogramEqualization(image):
+    yuv_image = BGR_to_YUV(image)
+    
+    yuv_image[:,:,0] = cv2.equalizeHist(yuv_image[:,:,0])
+
+    img_output = YUV_to_BGR(yuv_image)
+
+    return img_output
+###
+
+def removeNoiseColour(img):
+    dst = cv2.fastNlMeansDenoisingColored(img,None,10,10,7,21)
+
+    return dst
+###
+
+def BGR_to_RGB(image):
+    code = cv2.COLOR_BGR2RGB
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def BGR_to_YUV(image):
+    code = cv2.COLOR_BGR2YUV
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def RGB_to_BGR(image):
+    code = cv2.COLOR_RGB2BGR
+    dst = cv2.cvtColor(image, code)
+
+    return dst
+###
+
+def YUV_to_BGR(image):
+    code = cv2.COLOR_YUV2BGR
+    dst = cv2.cvtColor(image, code)
+
+    return dst
 ###
 
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
@@ -3211,7 +3351,7 @@ def chooseOrientation():
 ###
 
 def executeOrientationOption(intVal):
-    print("Inside executeOrientationOption()")
+    # print("Inside executeOrientationOption()")
 
     window.filename = openGUI("Select an Image...")
 
@@ -3301,13 +3441,6 @@ def executeOrientationOption(intVal):
             tellUser("Please select an option", labelUpdates)
     else:
         tellUser("Unable to get BGR image for Orientation window...", labelUpdates)
-###
-
-def BGR_to_RGB(image):
-    code = cv2.COLOR_BGR2RGB
-    dst = cv2.cvtColor(image, code)
-
-    return dst
 ###
 
 # returns angle of largest rectangle
