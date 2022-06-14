@@ -46,6 +46,7 @@ from os import getcwd, walk, mkdir, remove
 from os.path import exists
 import random
 from math import atan2, pi, sqrt, cos, sin
+from types import NoneType # added for Alex Code
 
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
@@ -663,6 +664,7 @@ def printHaralikInfo():
     sum_100_Haralik_features = np.zeros(13)
     sum_200_Haralik_features = np.zeros(13)
 
+    # Can also be used as indexes
     countR10 = 0
     countR20 = 0
     countR50 = 0
@@ -678,19 +680,23 @@ def printHaralikInfo():
             count += 1
             image = cv2.imread("Notes_DataSet" + "\\" + file, cv2.IMREAD_GRAYSCALE)
 
-            haralickFeatures = features.haralick(image)
-            if (np.zeros(13).shape != haralickFeatures.shape):
-                continue
+            haralickFeatures = features.haralick(image)[0] # select first item in 2D array
+            # print(haralickFeatures)
 
-            if "10" in file.split("_"):
+            # unsure what the purpose of this is...
+            # if (np.zeros(13).shape != haralickFeatures.shape):
+            #     # print("Odd occurence...")
+            #     continue
+
+            if "010" in file.split("_"):
                 sum_10_Haralik_features += haralickFeatures
                 countR10 += 1
 
-            if "20" in file.split("_"):
+            if "020" in file.split("_"):
                 sum_20_Haralik_features += haralickFeatures
                 countR20 += 1
 
-            if "50" in file.split("_"):
+            if "050" in file.split("_"):
                 sum_50_Haralik_features += haralickFeatures
                 countR50 += 1
             
@@ -701,19 +707,19 @@ def printHaralikInfo():
             if "200" in file.split("_"):
                 sum_200_Haralik_features += haralickFeatures
                 countR200 += 1
-    
+
     avg_10_Haralik_features = sum_10_Haralik_features / float(countR10)
     avg_20_Haralik_features = sum_20_Haralik_features / float(countR20)
     avg_50_Haralik_features = sum_50_Haralik_features / float(countR50)
     avg_100_Haralik_features = sum_100_Haralik_features / float(countR100)
     avg_200_Haralik_features = sum_200_Haralik_features / float(countR200)
 
-    print(f"R10 haralik features averages are: {avg_10_Haralik_features}")
-    print(f"R10 haralik features averages are: {avg_20_Haralik_features}")
-    print(f"R10 haralik features averages are: {avg_50_Haralik_features}")
-    print(f"R10 haralik features averages are: {avg_10_Haralik_features}")
-    print(f"R10 haralik features averages are: {avg_100_Haralik_features}")
-    print(f"R10 haralik features averages are: {avg_200_Haralik_features}")
+    print(f" R10 haralik features averages are: {avg_10_Haralik_features}")
+    print(f" R20 haralik features averages are: {avg_20_Haralik_features}")
+    print(f" R50 haralik features averages are: {avg_50_Haralik_features}")
+    # print(f"R100 haralik features averages are: {avg_10_Haralik_features}")
+    print(f"R100 haralik features averages are: {avg_100_Haralik_features}")
+    print(f"R200 haralik features averages are: {avg_200_Haralik_features}")
     print(count)
     tellUser("Printed in Terminal!", labelUpdates)
 ###
