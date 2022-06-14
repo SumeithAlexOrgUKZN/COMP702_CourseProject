@@ -31,6 +31,7 @@ from skimage.feature import canny #region filling
 from skimage.util import random_noise # several noise options
 
 from mahotas import haar # used for haar transform
+from mahotas import features
 
 from scipy import fft # used for dct transform
 from scipy.fftpack import dct, idct # used for Compression
@@ -40,7 +41,7 @@ from skimage.util import random_noise # used for to inject random noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
-from types import NoneType
+#from types import NoneType
 
 from os.path import exists
 import random
@@ -97,7 +98,8 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        command = printDataSetInfo
+        #command = printDataSetInfo
+        command = printHaralikInfo
     )
     button2= tk.Button(
         master = buttonFrameTop,
@@ -554,7 +556,21 @@ def checkForDependencies():
         
         # ! TODO --> Check for mess up images
     else:
-        tellUser("Please load the Data-Set, provided by the authors!")
+        tellUser("Please load the Notes Data-Set, provided by the authors!")
+    
+    # ! TODO --> Check for mess up images
+
+    currentDir = getcwd()
+    folder = "MessedUp_Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if count2 < 55:
+        tellUser("Please load the Messed Up Notes Data-Set, provided by the authors!")
 ###
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
 
@@ -638,6 +654,71 @@ def getDataSetInfo(path):
     return [dataSetSizes, absoluteDimensions, averageArray, totalPics]
 ###
 
+
+def printHaralikInfo():
+
+    sum_10_Haralik_features = np.zeros(13)
+    sum_20_Haralik_features = np.zeros(13)
+    sum_50_Haralik_features = np.zeros(13)
+    sum_100_Haralik_features = np.zeros(13)
+    sum_200_Haralik_features = np.zeros(13)
+
+    countR10 = 0
+    countR20 = 0
+    countR50 = 0
+    countR100 = 0
+    countR200 = 0
+    
+    currentDir = getcwd()
+    photoPath = currentDir + "\\Notes_DataSet"
+    path = walk(photoPath)
+    count = 0
+    for root, directories, files in path:
+        for file in files:
+            count += 1
+            image = cv2.imread("Notes_DataSet" + "\\" + file, cv2.IMREAD_GRAYSCALE)
+
+            haralickFeatures = features.haralick(image)
+            if (np.zeros(13).shape != haralickFeatures.shape):
+                continue
+
+            if "10" in file.split("_"):
+                sum_10_Haralik_features += haralickFeatures
+                countR10 += 1
+
+            if "20" in file.split("_"):
+                sum_20_Haralik_features += haralickFeatures
+                countR20 += 1
+
+            if "50" in file.split("_"):
+                sum_50_Haralik_features += haralickFeatures
+                countR50 += 1
+            
+            if "100" in file.split("_"):
+                sum_100_Haralik_features += haralickFeatures
+                countR100 += 1
+            
+            if "200" in file.split("_"):
+                sum_200_Haralik_features += haralickFeatures
+                countR200 += 1
+    
+    avg_10_Haralik_features = sum_10_Haralik_features / float(countR10)
+    avg_20_Haralik_features = sum_20_Haralik_features / float(countR20)
+    avg_50_Haralik_features = sum_50_Haralik_features / float(countR50)
+    avg_100_Haralik_features = sum_100_Haralik_features / float(countR100)
+    avg_200_Haralik_features = sum_200_Haralik_features / float(countR200)
+
+    print(f"R10 haralik features averages are: {avg_10_Haralik_features}")
+    print(f"R10 haralik features averages are: {avg_20_Haralik_features}")
+    print(f"R10 haralik features averages are: {avg_50_Haralik_features}")
+    print(f"R10 haralik features averages are: {avg_10_Haralik_features}")
+    print(f"R10 haralik features averages are: {avg_100_Haralik_features}")
+    print(f"R10 haralik features averages are: {avg_200_Haralik_features}")
+    print(count)
+    tellUser("Printed in Terminal!", labelUpdates)
+###
+
+###
 #------------------------------------------------------------------------------------Open Any Image Functions-------------------
 
 def openTheImage():
