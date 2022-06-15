@@ -216,7 +216,7 @@ def chooseExperimentMethod():
     )
     button16 = tk.Button(
         master = buttonFrameBottom1,
-        text = "16",
+        text = "14",
         width = 40,
         height = 5, 
         bg = "silver",
@@ -280,7 +280,7 @@ def executePredictionChoice(intVal):
     # ensure environment ready to begin
     checkForDependencies()
 
-    if (intVal != 2):
+    if (intVal != 2) and (intVal != 4):
         window.filename = openGUI("Select an Image...")
 
         # BGR because OpenCv Functions
@@ -296,6 +296,8 @@ def executePredictionChoice(intVal):
                 # print(colourInfo)
 
                 predictionVector = colourFeaturesComparison(colourInfo)
+                print("Prediction Vector:", predictionVector)
+
                 result = explainPrediction(predictionVector)
 
                 fig = plt.figure(num="Results", figsize=(10, 4))
@@ -320,12 +322,46 @@ def executePredictionChoice(intVal):
 
             elif (intVal == 3):
                 # Individual Simple Haralick Feature Prediciton
+
+                # 1) process grayscale image
+                processedImage = processGrayPicture(image, False)
+
+                # 2) get Haralick Features
+                picHaralick = getHaralickFeatures(processedImage)
+                
+                # 3) Do prediction
                 folderName = "Notes_DataSet"
                 haralick_10, haralick_20, haralick_50, haralick_100, \
                     haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="simple_haralick_features.txt")
                 
-                # ss
+                referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+                # print("Reference Haralick", referenceHaralick)
 
+                predictionVector = haralickFeaturesComparison(picHaralick, referenceHaralick=referenceHaralick)
+                print("Prediction Vector:", predictionVector)
+
+                result = explainPrediction(predictionVector)
+
+                fig = plt.figure(num="Results", figsize=(10, 4))
+                plt.clf() # Should clear last plot but keep window open?
+
+                fig.add_subplot(1, 3, 1)
+                plt.imshow( cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), cmap='gray')
+                plt.title("Original", wrap=True)
+                plt.axis('off') #Removes axes
+
+                fig.add_subplot(1, 3, 2)
+                plt.imshow( processedImage, cmap='gray')
+                plt.title("Processed", wrap=True)
+                plt.axis('off') #Removes axes
+
+                fig.add_subplot(1, 3, 3)
+                plt.text(0.2, 0.5, "Hit Vector revealed prediction of: " + result)
+                # plt.table(cellText=[predictionVector, ["Final Prediction:", "", "", result, "", ""]], loc='center')
+                plt.axis('off') #Removes axes
+
+                plt.show()
+               
             # elif (intVal == 4):
             #     #
 
@@ -335,29 +371,57 @@ def executePredictionChoice(intVal):
             tellUser("Unable to open colour image for prediction window...", labelUpdates)
     else:
         # Bulk Prediction
-        bulkClassification()
+        if (intVal == 2):
+            bulkColourClassification(folderToCompare="MessedUp_Notes_DataSet")
+        
+        elif(intVal == 4):
+            folderName = "Notes_DataSet"
+            haralick_10, haralick_20, haralick_50, haralick_100, \
+                haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="simple_haralick_features.txt")
+            
+            referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+
+            bulkHaralickClassification(referenceHaralick, folderToCompare="MessedUp_Notes_DataSet")
+        
+        else:
+            tellUser("Please select an option...", labelUpdates)
+        
 ###
 
-def bulkClassification():
+def bulkHaralickClassification(referenceVector, folderToCompare):
     currentDir = getcwd()
-    folder = "MessedUp_Notes_DataSet"
-    # folder = "Notes_DataSet"
+    folder = folderToCompare
     destinationFolder = currentDir + "\\" + folder
-    path = walk(destinationFolder)
-
-    
+    path = walk(destinationFolder)    
 
     for root, directories, files in path:
         for file in files:
             success, image = imageToColourBGR(destinationFolder + "\\" + file)
 
-            # cv2.imshow("JJ", image)
-            # cv2.waitKey(0)
-            # processedImage = image 
+            processedImage = processGrayPicture(image, False)
+
+            picHaralick = getHaralickFeatures(processedImage)
+
+            predictionVector = haralickFeaturesComparison(picHaralick, referenceHaralick=referenceVector)
+            result = explainPrediction(predictionVector)
+            print(file, ":::::", predictionVector, ":::::", result)
+            print()
+###
+
+def bulkColourClassification(folderToCompare):
+    currentDir = getcwd()
+    folder = folderToCompare
+    # folder = "Notes_DataSet"
+    destinationFolder = currentDir + "\\" + folder
+    path = walk(destinationFolder)    
+
+    for root, directories, files in path:
+        for file in files:
+            success, image = imageToColourBGR(destinationFolder + "\\" + file)
+
             processedImage = processColourPicture(image, False)
 
             colourInfo = getColourInfo(processedImage)
-            # print("\n", colourInfo)
 
             predictionVector = colourFeaturesComparison(colourInfo)
             result = explainPrediction(predictionVector)
@@ -375,6 +439,25 @@ def explainPrediction(predictionVector):
 
     return (result)
     # print("This bill is likely a ******--", result, "--******", sep="")
+###
+
+def haralickFeaturesComparison(haralickFeatures, referenceHaralick):
+    tempDifference = 0.0
+    hitVector = ["" for i in range(13)]
+    key = ["R010", "R020", "R050", "R100", "R200"]
+    keyIndex = -1 # updates alonside minDist
+    minDist = -1
+    for i in range(13):
+        for j in range(5):
+            tempDifference = abs( float(referenceHaralick[j][i]) - haralickFeatures[i] )
+
+            if (minDist == -1) or (tempDifference < minDist):
+                keyIndex = j
+                minDist = tempDifference
+
+        hitVector[i] = key[keyIndex]
+
+    return hitVector
 ###
 
 # this function gets the reference values, and calculates the best result for each image
@@ -3734,7 +3817,7 @@ def readInHaralickFeatures(folderOrigin, fileName):
     
     haralickVector = [0.0, 0.0, 0.0, 0.0, 0.0]
     for i in range(5):
-        haralickVector[i] = (lines[i] [ : -1] ).split("\n") # don't include whitespace at end!
+        haralickVector[i] = (lines[i] [ : -1] ).split(" ") 
 
     return (haralickVector)
 ###
