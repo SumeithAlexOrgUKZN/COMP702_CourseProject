@@ -495,6 +495,8 @@ def getColourVectors():
 
 def checkForDependencies():
 
+    print("---> Checking if Notes_DataSet exists")
+
     # ensure 55 pictures present
     currentDir = getcwd()
     folder = "Notes_DataSet"
@@ -507,20 +509,8 @@ def checkForDependencies():
     
     if (count1 >= 55):
         # only progress if Notes_DataSet is present
-        desiredFolder = "Reference_Materials"
-        desiredFile = "all_resized_pictures_colour_features.txt"
-        
-        # create desiredFile
-        if ( not exists(desiredFolder + "\\" + desiredFile) ):
-            folderName = "Resized_Notes_DataSet"
-            array = getClustersOfImages(folderName)
-            save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
 
-        desiredFolder = "Reference_Materials"
-        desiredFile = "colour_trends.txt"
-
-        if ( not exists(desiredFolder + "\\" + desiredFile) ):
-            saveColourTrends()
+        print("---> Checking if Resized_Notes_DataSet exists")
 
         desiredFolder = "Resized_Notes_DataSet"
 
@@ -540,9 +530,8 @@ def checkForDependencies():
         
         # ensure 55 pictures present
         currentDir = getcwd()
-        folder = "Notes_DataSet"
+        folder = "Resized_Notes_DataSet"
         path = walk(currentDir + "\\" + folder)
-        destinationFolder = currentDir + "\\Resized_Notes_DataSet"
 
         count1 = 0
         for root, directories, files in path:
@@ -553,6 +542,36 @@ def checkForDependencies():
             # CONDUCT BULK RESIZE
             (x, y) = (512, 1024)
             bulkResize(x, y)
+        
+        print("---> Checking Reference_Materials has colour information #1")
+
+        # colour reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "all_resized_pictures_colour_features.txt"
+        
+        # create desiredFile
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            folderName = "Resized_Notes_DataSet"
+            array = getClustersOfImages(folderName)
+            save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+        
+        print("---> Checking Reference_Materials has colour information #2")
+
+        # colour reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "colour_trends.txt"
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveColourTrends()
+
+        print("---> Checking Reference_Materials has haralick information #1")
+        
+        # haralick reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "simple_haralick_features.txt"
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveHaralickTrends(folderOrigin="Resized_Notes_DataSet", fileName=desiredFile)
         
     else:
         tellUser("Please load the Notes Data-Set, provided by the authors!")
@@ -3603,7 +3622,7 @@ def saveHaralickTrends(folderOrigin, fileName):
             print("New Error:", uhoh)
             pass
         
-        haralick_10, haralick_20, haralick_50, haralick_100, haralick_200 = getHaralickReferenceInfo(folderOrigin)
+        haralick_10, haralick_20, haralick_50, haralick_100, haralick_200 = getHaralickReferenceInfo(folderOrigin, fileName)
 
         vector = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
         rowString = ""
@@ -3634,7 +3653,7 @@ def getHaralickReferenceInfo(folderToUse, fileName):
     if (exists(destinationFolder + "\\" + fileName)):
         tellUser("File already exists!", labelUpdates)
         avg_10_Haralik_features, avg_20_Haralik_features, avg_50_Haralik_features, \
-        avg_100_Haralik_features, avg_200_Haralik_features = readInHaralickFeatures(fileName=fileName)
+        avg_100_Haralik_features, avg_200_Haralik_features = readInHaralickFeatures(folderOrigin=folderToUse, fileName=fileName)
     else:
 
         sum_10_Haralik_features = np.zeros(13)
@@ -3690,9 +3709,20 @@ def getHaralickReferenceInfo(folderToUse, fileName):
     return avg_10_Haralik_features, avg_20_Haralik_features, avg_50_Haralik_features, avg_100_Haralik_features, avg_200_Haralik_features
 ###
 
-def readInHaralickFeatures(fileName):
+def readInHaralickFeatures(folderOrigin, fileName):
     folderName = "Reference_Materials"
     desiredFile = folderName + "\\" + fileName
+
+    # create directory
+    try:
+        mkdir(folderName)
+
+        saveHaralickTrends(folderOrigin=folderOrigin, fileName=fileName)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
 
     with open(desiredFile) as f:
         lines = f.readlines()
@@ -3703,8 +3733,6 @@ def readInHaralickFeatures(fileName):
 
     return (haralickVector)
 ###
-
-readInHaralickFeatures("simple_haralick_features.txt")
 
 #------------------------------------------------------------------------------------Picture Alignment Functions Below----------
 
