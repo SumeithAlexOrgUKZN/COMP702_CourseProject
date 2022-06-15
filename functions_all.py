@@ -495,7 +495,6 @@ def getColourVectors():
 
 def checkForDependencies():
 
-    # ! TODO --> Look for Notes DataSet
     # ensure 55 pictures present
     currentDir = getcwd()
     folder = "Notes_DataSet"
@@ -555,11 +554,9 @@ def checkForDependencies():
             (x, y) = (512, 1024)
             bulkResize(x, y)
         
-        # ! TODO --> Check for mess up images
     else:
         tellUser("Please load the Notes Data-Set, provided by the authors!")
     
-    # ! TODO --> Check for mess up images
 
     currentDir = getcwd()
     folder = "MessedUp_Notes_DataSet"
@@ -3075,8 +3072,9 @@ def chooseFeatures():
 
     Radiobutton(featureWindow, text="Individual Color Channels", variable=featureOption, value=1, width=30).pack(anchor=W, side="top")
     Radiobutton(featureWindow, text="Individual Color Features", variable=featureOption, value=2, width=30).pack(anchor=W, side="top")
-    Radiobutton(featureWindow, text="Show Bulk Color Feature Extraction", variable=featureOption, value=3, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Show Bulk Color Features", variable=featureOption, value=3, width=30).pack(anchor=W, side="top")
     Radiobutton(featureWindow, text="Individual Haralick Grayscale features", variable=featureOption, value=4, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Show Bulk Haralick Features", variable=featureOption, value=5, width=30).pack(anchor=W, side="top")
 
     Button(featureWindow, text="Get Features and Show", width=50, bg='gray',
         command=lambda: executeFeatureChoice(intVal=featureOption.get(), show=True)
@@ -3240,6 +3238,28 @@ def executeFeatureChoice(intVal, show):
 
         else:
             tellUser("Unable to get grayscale image for Harlick Features...", labelUpdates)
+
+    elif (intVal == 5):
+        folderName = "Resized_Notes_DataSet"
+        haralick_10, haralick_20, haralick_50, haralick_100, haralick_200 = getHaralickReferenceInfo(folderName, "simple_haralick_features.txt")
+    
+        print(f" R10 haralik features averages are\n: {haralick_10}")
+        print(f" R20 haralik features averages are\n: {haralick_20}")
+        print(f" R50 haralik features averages are\n: {haralick_50}")
+        print(f"R100 haralik features averages are\n: {haralick_100}")
+        print(f"R200 haralik features averages are\n: {haralick_200}")
+
+        if (show):
+            tellUser("Printed in Terminal!", labelUpdates)
+        else:
+            fileName = "simple_haralick_features.txt"
+            folderName = "Resized_Notes_DataSet"
+            success = saveHaralickTrends(folderOrigin=folderName, fileName=fileName)    
+
+            if (success):
+                tellUser("Features saved successfully!", labelUpdates)
+            else:
+                tellUser("Unable to save features", labelUpdates)
 
     else:
         # should never execute
@@ -3566,77 +3586,125 @@ def saveColourTrends():
         return False
 ###
 
+def saveHaralickTrends(folderOrigin, fileName):
+    currentDir = getcwd()
+    folderName = "Reference_Materials"
+    destinationFolder = currentDir + "\\" + folderName
+
+    if (exists(destinationFolder + "\\" + fileName)):
+        tellUser("File already exists!", labelUpdates)
+    else:
+        # create directory
+        try:
+            mkdir(destinationFolder)
+        except FileExistsError as uhoh:
+            pass
+        except Exception as uhoh:
+            print("New Error:", uhoh)
+            pass
+        
+        haralick_10, haralick_20, haralick_50, haralick_100, haralick_200 = getHaralickReferenceInfo(folderOrigin)
+
+        vector = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+        rowString = ""
+        for i in range(5):
+            for j in range(13):
+                rowString += str(vector[i][j]) + " "
+            
+            rowString = rowString.strip() # remove last space
+            rowString += "\n"
+
+        file = open(destinationFolder + "\\" + fileName, "w+")
+        file.write(rowString[ : -1]) # ignore last char
+        file.close()
+
+    # see if successfulorientation
+    if (exists(destinationFolder + "\\" + fileName)):
+        return True
+    else:
+        return False
+###
+
 def getHaralickFeatures(image):
     return features.haralick(image)[0] # select first item in 2D array
 ###
 
-def printHaralikInfo(folderToUse):
+def getHaralickReferenceInfo(folderToUse, fileName):
+    destinationFolder = "reference_Materials"
+    if (exists(destinationFolder + "\\" + fileName)):
+        tellUser("File already exists!", labelUpdates)
+        avg_10_Haralik_features, avg_20_Haralik_features, avg_50_Haralik_features, \
+        avg_100_Haralik_features, avg_200_Haralik_features = readInHaralickFeatures(fileName=fileName)
+    else:
 
-    sum_10_Haralik_features = np.zeros(13)
-    sum_20_Haralik_features = np.zeros(13)
-    sum_50_Haralik_features = np.zeros(13)
-    sum_100_Haralik_features = np.zeros(13)
-    sum_200_Haralik_features = np.zeros(13)
+        sum_10_Haralik_features = np.zeros(13)
+        sum_20_Haralik_features = np.zeros(13)
+        sum_50_Haralik_features = np.zeros(13)
+        sum_100_Haralik_features = np.zeros(13)
+        sum_200_Haralik_features = np.zeros(13)
 
-    # Can also be used as indexes
-    countR10 = 0
-    countR20 = 0
-    countR50 = 0
-    countR100 = 0
-    countR200 = 0
-    
-    currentDir = getcwd()
-    photoPath = currentDir + "\\" + folderToUse 
-    path = walk(photoPath)
-    count = 0
-    for root, directories, files in path:
-        for file in files:
-            count += 1
-            image = cv2.imread(folderToUse + "\\" + file, cv2.IMREAD_GRAYSCALE)
+        # Can also be used as indexes
+        countR10 = 0
+        countR20 = 0
+        countR50 = 0
+        countR100 = 0
+        countR200 = 0
+        
+        currentDir = getcwd()
+        photoPath = currentDir + "\\" + folderToUse 
+        path = walk(photoPath)
+        count = 0
+        for root, directories, files in path:
+            for file in files:
+                count += 1
+                image = cv2.imread(folderToUse + "\\" + file, cv2.IMREAD_GRAYSCALE)
 
-            haralickFeatures = getHaralickFeatures(image)
-            # print(haralickFeatures)
+                haralickFeatures = getHaralickFeatures(image)
 
-            # unsure what the purpose of this is...
-            # if (np.zeros(13).shape != haralickFeatures.shape):
-            #     # print("Odd occurence...")
-            #     continue
+                if "010" in file.split("_"):
+                    sum_10_Haralik_features += haralickFeatures
+                    countR10 += 1
 
-            if "010" in file.split("_"):
-                sum_10_Haralik_features += haralickFeatures
-                countR10 += 1
+                if "020" in file.split("_"):
+                    sum_20_Haralik_features += haralickFeatures
+                    countR20 += 1
 
-            if "020" in file.split("_"):
-                sum_20_Haralik_features += haralickFeatures
-                countR20 += 1
+                if "050" in file.split("_"):
+                    sum_50_Haralik_features += haralickFeatures
+                    countR50 += 1
+                
+                if "100" in file.split("_"):
+                    sum_100_Haralik_features += haralickFeatures
+                    countR100 += 1
+                
+                if "200" in file.split("_"):
+                    sum_200_Haralik_features += haralickFeatures
+                    countR200 += 1
 
-            if "050" in file.split("_"):
-                sum_50_Haralik_features += haralickFeatures
-                countR50 += 1
-            
-            if "100" in file.split("_"):
-                sum_100_Haralik_features += haralickFeatures
-                countR100 += 1
-            
-            if "200" in file.split("_"):
-                sum_200_Haralik_features += haralickFeatures
-                countR200 += 1
+        avg_10_Haralik_features = sum_10_Haralik_features / float(countR10)
+        avg_20_Haralik_features = sum_20_Haralik_features / float(countR20)
+        avg_50_Haralik_features = sum_50_Haralik_features / float(countR50)
+        avg_100_Haralik_features = sum_100_Haralik_features / float(countR100)
+        avg_200_Haralik_features = sum_200_Haralik_features / float(countR200)
 
-    avg_10_Haralik_features = sum_10_Haralik_features / float(countR10)
-    avg_20_Haralik_features = sum_20_Haralik_features / float(countR20)
-    avg_50_Haralik_features = sum_50_Haralik_features / float(countR50)
-    avg_100_Haralik_features = sum_100_Haralik_features / float(countR100)
-    avg_200_Haralik_features = sum_200_Haralik_features / float(countR200)
-
-    print(f" R10 haralik features averages are: {avg_10_Haralik_features}")
-    print(f" R20 haralik features averages are: {avg_20_Haralik_features}")
-    print(f" R50 haralik features averages are: {avg_50_Haralik_features}")
-    # print(f"R100 haralik features averages are: {avg_10_Haralik_features}")
-    print(f"R100 haralik features averages are: {avg_100_Haralik_features}")
-    print(f"R200 haralik features averages are: {avg_200_Haralik_features}")
-    print(count)
-    tellUser("Printed in Terminal!", labelUpdates)
+    return avg_10_Haralik_features, avg_20_Haralik_features, avg_50_Haralik_features, avg_100_Haralik_features, avg_200_Haralik_features
 ###
+
+def readInHaralickFeatures(fileName):
+    folderName = "Reference_Materials"
+    desiredFile = folderName + "\\" + fileName
+
+    with open(desiredFile) as f:
+        lines = f.readlines()
+    
+    haralickVector = [0.0, 0.0, 0.0, 0.0, 0.0]
+    for i in range(5):
+        haralickVector[i] = (lines[i] [ : -1] ).split("\n") # don't include whitespace at end!
+
+    return (haralickVector)
+###
+
+readInHaralickFeatures("simple_haralick_features.txt")
 
 #------------------------------------------------------------------------------------Picture Alignment Functions Below----------
 
