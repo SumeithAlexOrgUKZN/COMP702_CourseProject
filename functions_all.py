@@ -701,7 +701,8 @@ def checkForDependencies():
         
         # create desiredFile
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
-            folderName = "Resized_Notes_DataSet"
+            # folderName = "Resized_Notes_DataSet"
+            folderName = "HistEqColour_Resized_Notes_DataSet"
             array = getClustersOfImages(folderName)
             save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
         
@@ -719,9 +720,10 @@ def checkForDependencies():
         # haralick reference
         desiredFolder = "Reference_Materials"
         desiredFile = "simple_haralick_features.txt"
+        folderName = "HistEqGray_Resized_Notes_DataSet"
 
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
-            saveHaralickTrends(folderOrigin="Resized_Notes_DataSet", fileName=desiredFile)
+            saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
         
     else:
         tellUser("Please load the Notes Data-Set, provided by the authors!")
@@ -1034,7 +1036,7 @@ def bulkColourHistEq():
     desiredFolder = "HistEqColour_Resized_Notes_DataSet"
     currentDir = getcwd()
     destinationFolder = currentDir + "\\" + desiredFolder
-    folder = "Notes_DataSet"
+    folder = "Resized_Notes_DataSet"
     path = walk(currentDir + "\\" + folder)
 
     # create directory
@@ -1056,7 +1058,7 @@ def bulkColourHistEq():
 
             colourFixedImage = colourHistogramEqualization(image)
 
-            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEq_", image=colourFixedImage)
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEqColour_", image=colourFixedImage)
             
     path = walk(destinationFolder)
     count2 = 0
@@ -1074,7 +1076,7 @@ def bulkGrayHistEq():
     desiredFolder = "HistEqGray_Resized_Notes_DataSet"
     currentDir = getcwd()
     destinationFolder = currentDir + "\\" + desiredFolder
-    folder = "Notes_DataSet"
+    folder = "Resized_Notes_DataSet"
     path = walk(currentDir + "\\" + folder)
 
     # create directory
@@ -1096,7 +1098,7 @@ def bulkGrayHistEq():
 
             grayFixedImage = histEqualization(image)
 
-            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEq_", image=grayFixedImage)
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEqGray_", image=grayFixedImage)
             
     path = walk(destinationFolder)
     count2 = 0
@@ -3442,7 +3444,8 @@ def executeFeatureChoice(intVal, show):
             # check if desiredFile exists
             desiredFile = "Reference_Materials\\all_resized_pictures_colour_features.txt"
             if ( not exists(desiredFile) ):
-                folderName = "Resized_Notes_DataSet"
+                # folderName = "Resized_Notes_DataSet"
+                foldername = "HistEqColour_Resized_Notes_DataSet"
                 array = getClustersOfImages(folderName)
                 save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
             
@@ -3512,7 +3515,7 @@ def executeFeatureChoice(intVal, show):
             tellUser("Printed in Terminal!", labelUpdates)
         else:
             fileName = "simple_haralick_features.txt"
-            folderName = "Resized_Notes_DataSet"
+            folderName = "HistEqGray_Resized_Notes_DataSet"
             success = saveHaralickTrends(folderOrigin=folderName, fileName=fileName)    
 
             if (success):
@@ -3730,7 +3733,8 @@ def getColourTrends():
     # 2) check if desiredFile exists
     desiredFile = "Reference_Materials\\all_resized_pictures_colour_features.txt"
     if ( not exists(desiredFile) ):
-        folderName = "Resized_Notes_DataSet"
+        # folderName = "Resized_Notes_DataSet"
+        folderName = "HistEqColour_Resized_Notes_DataSet"
         array = getClustersOfImages(folderName)
         save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
 
