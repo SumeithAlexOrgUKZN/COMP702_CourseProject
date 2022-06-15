@@ -266,8 +266,8 @@ def conductPrediction():
     
     Radiobutton(predictionWindow, text="Individual Colour Feature Prediction", variable=predictionOption, value=1).pack(anchor=W)
     Radiobutton(predictionWindow, text="Bulk Colour Feature Prediction", variable=predictionOption, value=2).pack(anchor=W)
-    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=3).pack(anchor=W)
-    Radiobutton(predictionWindow, text="something", variable=predictionOption, value=4).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Simple Haralick Feature Prediction", variable=predictionOption, value=3).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Simple Haralick Feature Prediction", variable=predictionOption, value=4).pack(anchor=W)
 
     Button(predictionWindow, text="Predict!", width=50, bg='gray',
         command=lambda: executePredictionChoice(intVal=predictionOption.get())
@@ -318,8 +318,13 @@ def executePredictionChoice(intVal):
 
                 plt.show()
 
-            # elif (intVal == 3):
-            #     #
+            elif (intVal == 3):
+                # Individual Simple Haralick Feature Prediciton
+                folderName = "Notes_DataSet"
+                haralick_10, haralick_20, haralick_50, haralick_100, \
+                    haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="simple_haralick_features.txt")
+                
+                # ss
 
             # elif (intVal == 4):
             #     #
@@ -4072,7 +4077,7 @@ def chooseProcessingOption():
     processingOption.set(0)
     
     Radiobutton(processingWindow, text="Colour Feature Processing", variable=processingOption, value=1).pack(anchor=W)
-    Radiobutton(processingWindow, text="something", variable=processingOption, value=2).pack(anchor=W)
+    Radiobutton(processingWindow, text="Grayscale Feature Processing", variable=processingOption, value=2).pack(anchor=W)
     Radiobutton(processingWindow, text="something", variable=processingOption, value=3).pack(anchor=W)
     Radiobutton(processingWindow, text="something", variable=processingOption, value=4).pack(anchor=W)
 
@@ -4085,9 +4090,9 @@ def chooseProcessingOption():
 ###
 
 def executeProcessingChoice(intVal, show, save):
-    if (intVal == 1):
-        window.filename = openGUI("Select an Image...")
+    window.filename = openGUI("Select an Image...")
 
+    if (intVal == 1):
         # BGR because OpenCv Functions
         success, image = imageToColourBGR(window.filename)
 
@@ -4098,7 +4103,7 @@ def executeProcessingChoice(intVal, show, save):
             if (save):
                 folder = "Processed_Images"
                 imgPath = window.filename
-                imgNameToAppend = "Processed_"
+                imgNameToAppend = "ProcessedColour_"
                 result = processColourPicture(image, False) # BGR pic
 
                 success = saveFile(folder, imgPath, imgNameToAppend, RGB_to_BGR(result) )
@@ -4109,6 +4114,28 @@ def executeProcessingChoice(intVal, show, save):
 
         else:
             tellUser("Unable to get Colour image for Processing Window...", labelUpdates)
+
+    elif (intVal == 2):
+        # grayscale feature processing
+        success, tempColourImage = imageToColourBGR(window.filename) # reads in colour now, immediately changes it
+
+        if (success):
+            result = processGrayPicture(tempColourImage, show)
+
+            if (save):
+                folder = "Processed_Images"
+                imgPath = window.filename
+                imgNameToAppend = "ProcessedGray_"
+                result = processGrayPicture(tempColourImage, False)
+
+                success = saveFile(folder, imgPath, imgNameToAppend, result )
+                if (success):
+                    tellUser("Saved successfully!", labelUpdates)
+                else:
+                    tellUser("Unable to save...", labelUpdates)
+        else:
+            tellUser("Unable to get Grayscale image for Processing Window...", labelUpdates)
+
     else:
         tellUser("Please select an option...", labelUpdates)
 ###
@@ -4127,15 +4154,6 @@ def processColourPicture(image, show):
 
     answer = deNoisedImage
 
-    # # option 2 --> NOT RECOMMENDED
-    # # 2) remove possible Noise
-    # deNoisedImage = removeNoiseColour(alignedImage)
-
-    # # 3) Histogram Equalication of - returns BGR
-    # colourFixedImage = colourHistogramEqualization(deNoisedImage)
-
-    # answer = colourFixedImage
-
     if (show):
         fig = plt.figure(num="Processing", figsize=(8, 4))
         plt.clf() # Should clear last plot but keep window open?
@@ -4143,6 +4161,37 @@ def processColourPicture(image, show):
         numRows = 2
         numColumns = 2
         modifiedImageArray = [BGR_to_RGB(image), alignedImage, colourFixedImage, answer]
+        labelArray = ["Original Image", "Aligned Image", "Histogram Equalized Image", "De Noised Image"]
+
+        plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
+
+        return NoneType
+    else:
+        return answer
+###
+
+def processGrayPicture(image, show):
+    # 1) re-align the image - automatically resizes too - returns BGR pic
+    alignedImage = automaticallyAlignImage(image) # works with colour images best!
+    
+    alignedImage = cv2.cvtColor(alignedImage, cv2.COLOR_BGR2GRAY) #NOW convert
+
+    # option 1
+    # 2) Histogram Equalication of - returns BGR
+    grayFixedImage = histEqualization(alignedImage)
+
+    # 3) remove possible Noise
+    deNoisedImage = removeNoiseGray(grayFixedImage)
+
+    answer = deNoisedImage
+
+    if (show):
+        fig = plt.figure(num="Processing", figsize=(8, 4))
+        plt.clf() # Should clear last plot but keep window open?
+
+        numRows = 2
+        numColumns = 2
+        modifiedImageArray = [BGR_to_RGB(image), alignedImage, grayFixedImage, answer]
         labelArray = ["Original Image", "Aligned Image", "Histogram Equalized Image", "De Noised Image"]
 
         plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
@@ -4196,6 +4245,12 @@ def colourHistogramEqualization(image):
 
 def removeNoiseColour(img):
     dst = cv2.fastNlMeansDenoisingColored(img,None,20,20,7,21)
+
+    return dst
+###
+
+def removeNoiseGray(img):
+    dst = cv2.fastNlMeansDenoising(img,None,20,7,21)
 
     return dst
 ###
