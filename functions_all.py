@@ -99,8 +99,8 @@ def chooseExperimentMethod():
         width = 40,
         height = 5, 
         bg = "silver",
-        #command = printDataSetInfo
-        command = printHaralikInfo
+        command = printDataSetInfo
+        # command = printHaralikInfo
     )
     button2= tk.Button(
         master = buttonFrameTop,
@@ -655,76 +655,6 @@ def getDataSetInfo(path):
     return [dataSetSizes, absoluteDimensions, averageArray, totalPics]
 ###
 
-
-def printHaralikInfo():
-
-    sum_10_Haralik_features = np.zeros(13)
-    sum_20_Haralik_features = np.zeros(13)
-    sum_50_Haralik_features = np.zeros(13)
-    sum_100_Haralik_features = np.zeros(13)
-    sum_200_Haralik_features = np.zeros(13)
-
-    # Can also be used as indexes
-    countR10 = 0
-    countR20 = 0
-    countR50 = 0
-    countR100 = 0
-    countR200 = 0
-    
-    currentDir = getcwd()
-    photoPath = currentDir + "\\Notes_DataSet"
-    path = walk(photoPath)
-    count = 0
-    for root, directories, files in path:
-        for file in files:
-            count += 1
-            image = cv2.imread("Notes_DataSet" + "\\" + file, cv2.IMREAD_GRAYSCALE)
-
-            haralickFeatures = features.haralick(image)[0] # select first item in 2D array
-            # print(haralickFeatures)
-
-            # unsure what the purpose of this is...
-            # if (np.zeros(13).shape != haralickFeatures.shape):
-            #     # print("Odd occurence...")
-            #     continue
-
-            if "010" in file.split("_"):
-                sum_10_Haralik_features += haralickFeatures
-                countR10 += 1
-
-            if "020" in file.split("_"):
-                sum_20_Haralik_features += haralickFeatures
-                countR20 += 1
-
-            if "050" in file.split("_"):
-                sum_50_Haralik_features += haralickFeatures
-                countR50 += 1
-            
-            if "100" in file.split("_"):
-                sum_100_Haralik_features += haralickFeatures
-                countR100 += 1
-            
-            if "200" in file.split("_"):
-                sum_200_Haralik_features += haralickFeatures
-                countR200 += 1
-
-    avg_10_Haralik_features = sum_10_Haralik_features / float(countR10)
-    avg_20_Haralik_features = sum_20_Haralik_features / float(countR20)
-    avg_50_Haralik_features = sum_50_Haralik_features / float(countR50)
-    avg_100_Haralik_features = sum_100_Haralik_features / float(countR100)
-    avg_200_Haralik_features = sum_200_Haralik_features / float(countR200)
-
-    print(f" R10 haralik features averages are: {avg_10_Haralik_features}")
-    print(f" R20 haralik features averages are: {avg_20_Haralik_features}")
-    print(f" R50 haralik features averages are: {avg_50_Haralik_features}")
-    # print(f"R100 haralik features averages are: {avg_10_Haralik_features}")
-    print(f"R100 haralik features averages are: {avg_100_Haralik_features}")
-    print(f"R200 haralik features averages are: {avg_200_Haralik_features}")
-    print(count)
-    tellUser("Printed in Terminal!", labelUpdates)
-###
-
-###
 #------------------------------------------------------------------------------------Open Any Image Functions-------------------
 
 def openTheImage():
@@ -3146,6 +3076,7 @@ def chooseFeatures():
     Radiobutton(featureWindow, text="Individual Color Channels", variable=featureOption, value=1, width=30).pack(anchor=W, side="top")
     Radiobutton(featureWindow, text="Individual Color Features", variable=featureOption, value=2, width=30).pack(anchor=W, side="top")
     Radiobutton(featureWindow, text="Show Bulk Color Feature Extraction", variable=featureOption, value=3, width=30).pack(anchor=W, side="top")
+    Radiobutton(featureWindow, text="Individual Haralick Grayscale features", variable=featureOption, value=4, width=30).pack(anchor=W, side="top")
 
     Button(featureWindow, text="Get Features and Show", width=50, bg='gray',
         command=lambda: executeFeatureChoice(intVal=featureOption.get(), show=True)
@@ -3221,7 +3152,7 @@ def executeFeatureChoice(intVal, show):
                     print("New Error:", uhoh)
                     pass
                 
-                fileName = getImageName(getFileName(window.filename)) + ".txt"
+                fileName = "ColourFeatures_" + getImageName(getFileName(window.filename)) + ".txt"
                 rowString = ""
 
                 for i in range(len(colour_info)):
@@ -3243,7 +3174,6 @@ def executeFeatureChoice(intVal, show):
                 else:
                     tellUser("Saved Successfully!", labelUpdates)
 
-        
         else:
             tellUser("Unable to get Colour Image for Colour features...", labelUpdates)
 
@@ -3265,6 +3195,51 @@ def executeFeatureChoice(intVal, show):
             else:
                 tellUser("Unable to Save...", labelUpdates)
 
+    elif (intVal == 4):
+        # Individual Haralick Features
+
+        window.filename = openGUI("Select an Image...")
+        # success, image = getImage(window.filename)
+        success, gray = imgToGrayscale(window.filename)
+
+        if (success):
+            haralickFeatures = getHaralickFeatures(gray)
+
+            if (show):
+                print("Haralick Features of: ", getImageName(getFileName(window.filename)), "\n", haralickFeatures)
+                tellUser("Results shown in terminal!", labelUpdates)
+            else:
+                currentDir = getcwd()
+                folderName = "Individual_Reference_Materials"
+                destinationFolder = currentDir + "\\" + folderName
+
+                # create directory
+                try:
+                    mkdir(destinationFolder)
+                except FileExistsError as uhoh:
+                    pass
+                except Exception as uhoh:
+                    print("New Error:", uhoh)
+                    pass
+                
+                rowString = ""
+                for item in haralickFeatures:
+                    rowString += str(item) + " "
+
+                fileName = "HaralickFeatures_" + getImageName(getFileName(window.filename)) + ".txt"
+
+                file = open(destinationFolder + "\\" + fileName, "w+")
+                file.write(rowString[ : -1]) # ignore last char
+                file.close()
+
+                if (exists(destinationFolder + "\\" + fileName)):
+                    tellUser("Features saved successfully!", labelUpdates)
+                else:
+                    tellUser("Unable to save features", labelUpdates)
+
+
+        else:
+            tellUser("Unable to get grayscale image for Harlick Features...", labelUpdates)
 
     else:
         # should never execute
@@ -3591,6 +3566,77 @@ def saveColourTrends():
         return False
 ###
 
+def getHaralickFeatures(image):
+    return features.haralick(image)[0] # select first item in 2D array
+###
+
+def printHaralikInfo(folderToUse):
+
+    sum_10_Haralik_features = np.zeros(13)
+    sum_20_Haralik_features = np.zeros(13)
+    sum_50_Haralik_features = np.zeros(13)
+    sum_100_Haralik_features = np.zeros(13)
+    sum_200_Haralik_features = np.zeros(13)
+
+    # Can also be used as indexes
+    countR10 = 0
+    countR20 = 0
+    countR50 = 0
+    countR100 = 0
+    countR200 = 0
+    
+    currentDir = getcwd()
+    photoPath = currentDir + "\\" + folderToUse 
+    path = walk(photoPath)
+    count = 0
+    for root, directories, files in path:
+        for file in files:
+            count += 1
+            image = cv2.imread(folderToUse + "\\" + file, cv2.IMREAD_GRAYSCALE)
+
+            haralickFeatures = getHaralickFeatures(image)
+            # print(haralickFeatures)
+
+            # unsure what the purpose of this is...
+            # if (np.zeros(13).shape != haralickFeatures.shape):
+            #     # print("Odd occurence...")
+            #     continue
+
+            if "010" in file.split("_"):
+                sum_10_Haralik_features += haralickFeatures
+                countR10 += 1
+
+            if "020" in file.split("_"):
+                sum_20_Haralik_features += haralickFeatures
+                countR20 += 1
+
+            if "050" in file.split("_"):
+                sum_50_Haralik_features += haralickFeatures
+                countR50 += 1
+            
+            if "100" in file.split("_"):
+                sum_100_Haralik_features += haralickFeatures
+                countR100 += 1
+            
+            if "200" in file.split("_"):
+                sum_200_Haralik_features += haralickFeatures
+                countR200 += 1
+
+    avg_10_Haralik_features = sum_10_Haralik_features / float(countR10)
+    avg_20_Haralik_features = sum_20_Haralik_features / float(countR20)
+    avg_50_Haralik_features = sum_50_Haralik_features / float(countR50)
+    avg_100_Haralik_features = sum_100_Haralik_features / float(countR100)
+    avg_200_Haralik_features = sum_200_Haralik_features / float(countR200)
+
+    print(f" R10 haralik features averages are: {avg_10_Haralik_features}")
+    print(f" R20 haralik features averages are: {avg_20_Haralik_features}")
+    print(f" R50 haralik features averages are: {avg_50_Haralik_features}")
+    # print(f"R100 haralik features averages are: {avg_10_Haralik_features}")
+    print(f"R100 haralik features averages are: {avg_100_Haralik_features}")
+    print(f"R200 haralik features averages are: {avg_200_Haralik_features}")
+    print(count)
+    tellUser("Printed in Terminal!", labelUpdates)
+###
 
 #------------------------------------------------------------------------------------Picture Alignment Functions Below----------
 
