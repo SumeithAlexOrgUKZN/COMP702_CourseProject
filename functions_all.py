@@ -630,6 +630,68 @@ def checkForDependencies():
             # CONDUCT BULK RESIZE
             (x, y) = (512, 1024)
             bulkResize(x, y)
+
+        print("---> Checking if HistEqColour_Resized_Notes_DataSet exists")
+
+        desiredFolder = "HistEqColour_Resized_Notes_DataSet"
+
+        # create desiredFolder
+        if ( not exists(desiredFolder) ):
+            currentDir = getcwd()
+            destinationFolder = currentDir + "\\" + desiredFolder
+
+            # create directory
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+        
+        # ensure 55 pictures present
+        currentDir = getcwd()
+        folder = desiredFolder
+        path = walk(currentDir + "\\" + folder)
+
+        count1 = 0
+        for root, directories, files in path:
+            for file in files:
+                count1 += 1
+
+        if (count1 < 55):
+            bulkColourHistEq()
+
+        print("---> Checking if HistEqGray_Resized_Notes_DataSet exists")
+
+        desiredFolder = "HistEqGray_Resized_Notes_DataSet"
+
+        # create desiredFolder
+        if ( not exists(desiredFolder) ):
+            currentDir = getcwd()
+            destinationFolder = currentDir + "\\" + desiredFolder
+
+            # create directory
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+        
+        # ensure 55 pictures present
+        currentDir = getcwd()
+        folder = desiredFolder
+        path = walk(currentDir + "\\" + folder)
+
+        count1 = 0
+        for root, directories, files in path:
+            for file in files:
+                count1 += 1
+
+        if (count1 < 55):
+            bulkGrayHistEq()
         
         print("---> Checking Reference_Materials has colour information #1")
 
@@ -966,6 +1028,86 @@ def bulkResize(x, y):
         tellUser("Pictures Resized Successfully", labelUpdates)
     else:
         tellUser("Not all pictures resized...", labelUpdates)
+###
+
+def bulkColourHistEq():
+    desiredFolder = "HistEqColour_Resized_Notes_DataSet"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + desiredFolder
+    folder = "Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_UNCHANGED)
+
+            colourFixedImage = colourHistogramEqualization(image)
+
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEq_", image=colourFixedImage)
+            
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures changed Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are changed...", labelUpdates)
+###
+
+def bulkGrayHistEq():
+    desiredFolder = "HistEqGray_Resized_Notes_DataSet"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + desiredFolder
+    folder = "Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_GRAYSCALE)
+
+            grayFixedImage = histEqualization(image)
+
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEq_", image=grayFixedImage)
+            
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures changed Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are changed...", labelUpdates)
 ###
 
 #------------------------------------------------------------------------------------Converting Functions Below-----------------
@@ -3146,6 +3288,8 @@ def chooseBulkChanges():
 
     Radiobutton(bulkWindow, text="Bulk Resize", variable=bulkOption, value=1).pack(anchor=W, side="top")
     Radiobutton(bulkWindow, text="Bulk Mess Up", variable=bulkOption, value=2).pack(anchor=W, side="top")
+    Radiobutton(bulkWindow, text="Bulk Colour Histogram Equalization", variable=bulkOption, value=3).pack(anchor=W, side="top")
+    Radiobutton(bulkWindow, text="Bulk Gray Histogram Equalization", variable=bulkOption, value=4).pack(anchor=W, side="top")
 
     Button(bulkWindow, text="Apply Bulk Changes", width=35, bg='gray',
         command=lambda: executeBulkOption(intVal=bulkOption.get()) 
@@ -3160,6 +3304,14 @@ def executeBulkOption(intVal):
     elif (intVal == 2):
         # Bulk Mess Up
         conductBulkMessUP()
+
+    elif (intVal == 3):
+        # bulk colour histogram equalization
+        bulkColourHistEq()
+    
+    elif (intVal == 4):
+        # bulk gray histogram equalization
+        bulkGrayHistEq()
 
     else:
         tellUser("Please select an option...", labelUpdates)
@@ -3489,7 +3641,7 @@ def getClustersOfImages(folderName):
     currentDir = getcwd()
     path = walk(currentDir + "\\" + folderName)
 
-    resizedDirectory = "Resized_Notes_DataSet"
+    resizedDirectory = folderName
 
     # create desiredFile
     if ( not exists(currentDir + "\\" + resizedDirectory) ):
