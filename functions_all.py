@@ -40,7 +40,7 @@ from skimage.util import random_noise # used for to inject random noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
-from types import NoneType
+#from types import NoneType
 
 from os.path import exists
 import random
