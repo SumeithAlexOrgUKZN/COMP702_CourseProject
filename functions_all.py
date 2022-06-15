@@ -48,6 +48,82 @@ import random
 from math import atan2, pi, sqrt, cos, sin
 from types import NoneType # added for Alex Code
 
+#--------------------------------------------------------------------------------------------------------------Things to change!
+
+#-----------------------------------------------CHANGE THIS TO SEE DIFFERENT RESULTS-------------#
+REFERENCE_MATERIAL_SOURCE = "Resized_Notes_DataSet"
+# REFERENCE_MATERIAL_SOURCE = "K_Means_Cluster"
+# PREDICTION_SET_SOURCE = "MessedUp_Notes_DataSet"
+PREDICTION_SET_SOURCE = "Resized_Notes_DataSet"
+#-----------------------------------------------CHANGE THIS TO SEE DIFFERENT RESULTS-------------#
+# Key functions are saveHaralickTrends and saveColourTrends
+# Key functions include playfulFunction
+
+def playfulFunction(img):
+    twoDimage = img.reshape((-1,1)) # Transform into a 1D matrix
+    twoDimage = np.float32(twoDimage) # float32 data type needed for this function
+
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    attempts=10
+
+    K = 8
+
+    ret, label, center = cv2.kmeans(twoDimage, K, None, criteria, attempts, cv2.KMEANS_PP_CENTERS)
+    center = np.uint8(center)
+    res = center[label.flatten()]
+    result_image = res.reshape((img.shape))
+
+    return result_image
+###
+
+def bulkGrayPlayful():
+    desiredFolder = "K_Means_Cluster"
+    folder = REFERENCE_MATERIAL_SOURCE
+    name = "Kmeans4_"
+
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + desiredFolder
+    path = walk(currentDir + "\\" + folder)
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_GRAYSCALE)
+
+            #---------------------------------------------CHANGE THESE FUNCTIONS------------#
+            # contour filling
+            img = image
+            
+            thing = playfulFunction(img)
+
+            grayFixedImage = thing
+            #---------------------------------------------CHANGE THESE FUNCTIONS------------#
+            
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend=name, image=grayFixedImage)
+            
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures changed Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are changed...", labelUpdates)
+###
 
 #--------------------------------------------------------------------------------------------------------------Global Variables
 
@@ -330,7 +406,7 @@ def executePredictionChoice(intVal):
                 picHaralick = getHaralickFeatures(processedImage)
                 
                 # 3) Do prediction
-                folderName = "Notes_DataSet"
+                folderName = REFERENCE_MATERIAL_SOURCE
                 haralick_10, haralick_20, haralick_50, haralick_100, \
                     haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="simple_haralick_features.txt")
                 
@@ -372,16 +448,24 @@ def executePredictionChoice(intVal):
     else:
         # Bulk Prediction
         if (intVal == 2):
-            bulkColourClassification(folderToCompare="MessedUp_Notes_DataSet")
+            folderToCompare=PREDICTION_SET_SOURCE
+
+
+            bulkColourClassification(folderToCompare=folderToCompare)
         
         elif(intVal == 4):
-            folderName = "Notes_DataSet"
+
+            folderToCompare=PREDICTION_SET_SOURCE
+
+            folderName = REFERENCE_MATERIAL_SOURCE
+            
+
             haralick_10, haralick_20, haralick_50, haralick_100, \
                 haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="simple_haralick_features.txt")
             
             referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
 
-            bulkHaralickClassification(referenceHaralick, folderToCompare="MessedUp_Notes_DataSet")
+            bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare)
         
         else:
             tellUser("Please select an option...", labelUpdates)
@@ -664,7 +748,7 @@ def checkForDependencies():
 
         print("---> Checking if HistEqGray_Resized_Notes_DataSet exists")
 
-        desiredFolder = "HistEqGray_Resized_Notes_DataSet"
+        desiredFolder = REFERENCE_MATERIAL_SOURCE
 
         # create desiredFolder
         if ( not exists(desiredFolder) ):
@@ -720,7 +804,7 @@ def checkForDependencies():
         # haralick reference
         desiredFolder = "Reference_Materials"
         desiredFile = "simple_haralick_features.txt"
-        folderName = "HistEqGray_Resized_Notes_DataSet"
+        folderName = REFERENCE_MATERIAL_SOURCE
 
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
@@ -730,7 +814,7 @@ def checkForDependencies():
     
 
     currentDir = getcwd()
-    folder = "MessedUp_Notes_DataSet"
+    folder = PREDICTION_SET_SOURCE
     path = walk(currentDir + "\\" + folder)
 
     count2 = 0
@@ -1073,7 +1157,7 @@ def bulkColourHistEq():
 ###
 
 def bulkGrayHistEq():
-    desiredFolder = "HistEqGray_Resized_Notes_DataSet"
+    desiredFolder = REFERENCE_MATERIAL_SOURCE
     currentDir = getcwd()
     destinationFolder = currentDir + "\\" + desiredFolder
     folder = "Resized_Notes_DataSet"
@@ -3054,7 +3138,7 @@ def conductBulkMessUP():
 
             messedUp = rdnMessup(image)
             # cv2.imwrite(destinationFolder + "\\" + file, resizedImage)
-            success = saveFile(folder="MessedUp_Notes_DataSet", imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="MessedUp_", image=messedUp)
+            success = saveFile(folder=PREDICTION_SET_SOURCE, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="MessedUp_", image=messedUp)
 
     path = walk(destinationFolder)
     count2 = 0
@@ -3292,6 +3376,7 @@ def chooseBulkChanges():
     Radiobutton(bulkWindow, text="Bulk Mess Up", variable=bulkOption, value=2).pack(anchor=W, side="top")
     Radiobutton(bulkWindow, text="Bulk Colour Histogram Equalization", variable=bulkOption, value=3).pack(anchor=W, side="top")
     Radiobutton(bulkWindow, text="Bulk Gray Histogram Equalization", variable=bulkOption, value=4).pack(anchor=W, side="top")
+    Radiobutton(bulkWindow, text="Bulk Gray Playful", variable=bulkOption, value=5).pack(anchor=W, side="top")
 
     Button(bulkWindow, text="Apply Bulk Changes", width=35, bg='gray',
         command=lambda: executeBulkOption(intVal=bulkOption.get()) 
@@ -3314,6 +3399,9 @@ def executeBulkOption(intVal):
     elif (intVal == 4):
         # bulk gray histogram equalization
         bulkGrayHistEq()
+    
+    elif (intVal == 5):
+        bulkGrayPlayful()
 
     else:
         tellUser("Please select an option...", labelUpdates)
@@ -3502,7 +3590,7 @@ def executeFeatureChoice(intVal, show):
             tellUser("Unable to get grayscale image for Harlick Features...", labelUpdates)
 
     elif (intVal == 5):
-        folderName = "Resized_Notes_DataSet"
+        folderName = REFERENCE_MATERIAL_SOURCE
         haralick_10, haralick_20, haralick_50, haralick_100, haralick_200 = getHaralickReferenceInfo(folderName, "simple_haralick_features.txt")
     
         print(f" R10 haralik features averages are\n: {haralick_10}")
@@ -3515,7 +3603,7 @@ def executeFeatureChoice(intVal, show):
             tellUser("Printed in Terminal!", labelUpdates)
         else:
             fileName = "simple_haralick_features.txt"
-            folderName = "HistEqGray_Resized_Notes_DataSet"
+            folderName = REFERENCE_MATERIAL_SOURCE
             success = saveHaralickTrends(folderOrigin=folderName, fileName=fileName)    
 
             if (success):
@@ -3734,7 +3822,7 @@ def getColourTrends():
     desiredFile = "Reference_Materials\\all_resized_pictures_colour_features.txt"
     if ( not exists(desiredFile) ):
         # folderName = "Resized_Notes_DataSet"
-        folderName = "HistEqColour_Resized_Notes_DataSet"
+        folderName = REFERENCE_MATERIAL_SOURCE
         array = getClustersOfImages(folderName)
         save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
 
@@ -4422,7 +4510,9 @@ def processGrayPicture(image, show):
     # 3) remove possible Noise
     deNoisedImage = removeNoiseGray(grayFixedImage)
 
-    answer = deNoisedImage
+    # used for quick changes!
+    thing = playfulFunction(deNoisedImage)
+    answer = thing
 
     if (show):
         fig = plt.figure(num="Processing", figsize=(8, 4))
@@ -4469,7 +4559,7 @@ def automaticallyAlignImage(image):
     (x, y) = (512, 1024)
     resizedPic = cv2.resize(croppedPic, (y, x)) # note order
 
-    return RGB_to_BGR(resizedPic)
+    return resizedPic
 ###
 
 def colourHistogramEqualization(image):
