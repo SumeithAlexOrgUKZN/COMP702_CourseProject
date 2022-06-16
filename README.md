@@ -1,5 +1,5 @@
 # COMP702_CourseProject
-# UKZN COMP702 Course Project (mage Processing and Computer Vision)
+# UKZN COMP702 Course Project (Image Processing and Computer Vision)
 
 ## How to use: Bank Note Recognition 
 
@@ -35,6 +35,8 @@ Designed and implemented by Alexander Goudemond (219030365) and Sumeith Ishwanth
 
 ## To run:
   Run the Python script "bank_note_recognition.py"
+  
+  It is recommended that the entired directory is cloned (or at the very least, MessedUP_Notes_DataSet, Notes_DataSet and the python scripts) The cumulative size is ~85MB
 
   A GUI will open and there will be 3 options:
   1. Classify an image
