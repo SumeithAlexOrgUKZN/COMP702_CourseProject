@@ -46,6 +46,9 @@ from os.path import exists
 import random
 from math import atan2, pi, sqrt, cos, sin
 from types import NoneType # added for Alex Code
+
+from time import time, strftime, gmtime
+from datetime import timedelta
 #--------------------------------------------------------------------------------------------------------------Things to change!
 
 #-----------------------------------------------CHANGE THIS TO SEE DIFFERENT RESULTS-------------#
@@ -416,6 +419,7 @@ def executePredictionChoice(intVal):
 
     # ensure environment ready to begin
     checkForDependencies()
+    timeStart = time()
 
     if (intVal % 2 == 1):
         window.filename = openGUI("Select an Image...")
@@ -437,6 +441,9 @@ def executePredictionChoice(intVal):
 
                 result = explainPrediction(predictionVector)
 
+                timeEnd = time()
+                tellUser("Hit Vector in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
+
                 plotResults(BGR_to_RGB(image), BGR_to_RGB(processedImage), result)
             
             elif (intVal == 3):
@@ -451,6 +458,9 @@ def executePredictionChoice(intVal):
                 print("Prediction Vector:", predictionVector)
 
                 result = explainPrediction(predictionVector)
+
+                timeEnd = time()
+                tellUser("Hit Vector in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
 
                 plotResults(BGR_to_RGB(image), BGR_to_RGB(processedImage), result)
 
@@ -476,6 +486,9 @@ def executePredictionChoice(intVal):
 
                 result = explainPrediction(predictionVector)
 
+                timeEnd = time()
+                tellUser("Hit Vector in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
+
                 plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), processedImage, result)
                
             elif (intVal == 7):
@@ -499,6 +512,9 @@ def executePredictionChoice(intVal):
                 print("Prediction Vector:", predictionVector)
 
                 result = explainPrediction(predictionVector)
+
+                timeEnd = time()
+                tellUser("Hit Vector in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
 
                 plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), processedImage, result)
             
@@ -527,6 +543,9 @@ def executePredictionChoice(intVal):
 
                 result = explainPrediction(predictionVector)
 
+                timeEnd = time()
+                tellUser("Hit Vector in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
+
                 plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), contouredImage, result)
 
             elif (intVal == 11):
@@ -553,6 +572,9 @@ def executePredictionChoice(intVal):
                 print("Prediction Vector:", predictionVector)
 
                 result = explainPrediction(predictionVector)
+
+                timeEnd = time()
+                tellUser("Hit Vector in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
 
                 plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), contouredImage, result)
 
@@ -581,6 +603,9 @@ def executePredictionChoice(intVal):
 
                 result = explainPrediction(predictionVector)
 
+                timeEnd = time()
+                tellUser("Hit Vector in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
+
                 plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), contouredImage, result)
 
             else:   
@@ -595,7 +620,8 @@ def executePredictionChoice(intVal):
 
             bulkColourClassification(folderToCompare=folderToCompare)
 
-            tellUser("Results in Terminal!", labelUpdates)
+            timeEnd = time()
+            tellUser("Results in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
         
         elif(intVal == 4):
             # Bulk Prediction Histogram Equalization colour
@@ -603,7 +629,8 @@ def executePredictionChoice(intVal):
 
             bulkColourClassificationHistEq(folderToCompare=folderToCompare)
             
-            tellUser("Results in Terminal!", labelUpdates)
+            timeEnd = time()
+            tellUser("Results in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
         
         elif(intVal == 6):
             # Bulk Prediction Simple Haralick
@@ -618,7 +645,8 @@ def executePredictionChoice(intVal):
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare)
 
-            tellUser("Results in Terminal!", labelUpdates)
+            timeEnd = time()
+            tellUser("Results in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
         
         elif (intVal == 8):
             # Bulk Prediction Histogram Equalization Haralick
@@ -634,7 +662,8 @@ def executePredictionChoice(intVal):
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare)
 
-            tellUser("Results in Terminal!", labelUpdates)
+            timeEnd = time()
+            tellUser("Results in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
         
         elif (intVal == 10):
             # Bulk Prediction Histogram Equalization Contoured Haralick
@@ -649,7 +678,8 @@ def executePredictionChoice(intVal):
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare) 
 
-            tellUser("Results in Terminal!", labelUpdates)
+            timeEnd = time()
+            tellUser("Results in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
         
         elif(intVal == 12):
             # Bulk Prediction Histogram Equalization Canny and Negative Haralick
@@ -664,7 +694,8 @@ def executePredictionChoice(intVal):
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare) 
 
-            tellUser("Results in Terminal!", labelUpdates)
+            timeEnd = time()
+            tellUser("Results in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
         
         elif(intVal == 14):
             # Bulk Prediction Histogram Equalization CK means Haralick
@@ -678,8 +709,9 @@ def executePredictionChoice(intVal):
             referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare) 
-
-            tellUser("Results in Terminal!", labelUpdates)
+            
+            timeEnd = time()
+            tellUser("Results in Terminal! Time Passed (H:M:S): " + strftime("%H:%M:%S", gmtime(timeEnd - timeStart)), labelUpdates)
         
         else:
             tellUser("Please select an option...", labelUpdates)
@@ -1024,6 +1056,7 @@ def getColourVectorsHistEq():
 def checkForDependencies():
 
     print("\n---> Checking if Notes_DataSet exists                                                           ", end="")
+    timeStart = time()
 
     # ensure 55 pictures present
     currentDir = getcwd()
@@ -1036,11 +1069,13 @@ def checkForDependencies():
             count1 += 1
     
     if (count1 >= 55):
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
         # only progress if Notes_DataSet is present
 
         print("---> Checking if Resized_Notes_DataSet exists                                                   ", end="")
-
+        timeStart = time()
+        
         desiredFolder = "Resized_Notes_DataSet"
 
         # create desiredFolder
@@ -1072,9 +1107,12 @@ def checkForDependencies():
             (x, y) = (512, 1024)
             bulkResize(x, y)
 
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking if HistEqColour_Resized_Notes_DataSet exists                                      ", end="")
+        timeStart = time()
+
 
         desiredFolder = "HistEqColour_Resized_Notes_DataSet"
 
@@ -1105,9 +1143,11 @@ def checkForDependencies():
         if (count1 < 55):
             bulkColourHistEq()
 
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking if HistEqGray_Resized_Notes_DataSet exists                                        ", end="")
+        timeStart = time()
 
         desiredFolder = "HistEqGray_Resized_Notes_DataSet"
 
@@ -1138,9 +1178,11 @@ def checkForDependencies():
         if (count1 < 55):
             bulkGrayHistEq()
 
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking if Contoured_HistEqGray_Resized_Notes_DataSet exists                              ", end="")
+        timeStart = time()
 
         desiredFolder = "Contoured_HistEqGray_Resized_Notes_DataSet"
 
@@ -1170,10 +1212,12 @@ def checkForDependencies():
 
         if (count1 < 55):
             bulkGrayHistEqContoured()
-        
-        print("   -->Done")
+
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking if Canny_Negative_HistEqGray_Resized_Notes_DataSet exists                         ", end="")
+        timeStart = time()
 
         desiredFolder = "Canny_Negative_HistEqGray_Resized_Notes_DataSet"
 
@@ -1204,9 +1248,11 @@ def checkForDependencies():
         if (count1 < 55):
             bulkGrayHistEqCannyNeg()
 
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking if KMeansCluster_HistEqGray_Resized_Notes_DataSet exists                          ", end="")
+        timeStart = time()
 
         desiredFolder = "KMeansCluster_HistEqGray_Resized_Notes_DataSet"
 
@@ -1237,11 +1283,13 @@ def checkForDependencies():
         if (count1 < 55):
             bulkGrayHistEqKMeansCluster()
         
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print()
         
         print("---> Checking Reference_Materials has simple colour information #1                              ", end="")
+        timeStart = time()
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1254,9 +1302,11 @@ def checkForDependencies():
             array = getClustersOfImages(folderName)
             save3DArray(array, "Reference_Materials", desiredFile)
         
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has simple colour information #2                              ", end="")
+        timeStart = time()
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1265,9 +1315,11 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveColourTrends()
         
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has Histogram Equalized colour information #1                 ", end="")
+        timeStart = time()
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1281,9 +1333,11 @@ def checkForDependencies():
             array = getClustersOfImages(folderName)
             save3DArray(array, "Reference_Materials", desiredFile)
         
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has Histogram Equalized colour information #2                 ", end="")
+        timeStart = time()
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1293,9 +1347,11 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveColourTrendsHistEq()
 
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has Haralick information #1                                   ", end="")
+        timeStart = time()
         
         # haralick reference
         desiredFolder = "Reference_Materials"
@@ -1305,10 +1361,12 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
 
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has Histogram Equalized Haralick information                  ", end="")
-        
+        timeStart = time()
+
         # haralick reference
         desiredFolder = "Reference_Materials"
         desiredFile = "HistEq_haralick_features.txt"
@@ -1317,10 +1375,11 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
         
-
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has Histogram Equalized Complete Contours Haralick information", end="")
+        timeStart = time()
         
         # haralick reference
         desiredFolder = "Reference_Materials"
@@ -1330,9 +1389,11 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
         
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has Histogram Equalized Canny Negative Haralick information   ", end="")
+        timeStart = time()
         
         # haralick reference
         desiredFolder = "Reference_Materials"
@@ -1342,9 +1403,11 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
         
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 
         print("---> Checking Reference_Materials has Histogram Equalized KMeans Clustering Haralick information", end="")
+        timeStart = time()
         
         # haralick reference
         desiredFolder = "Reference_Materials"
@@ -1354,13 +1417,17 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
         
-        print("   -->Done")
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
         
     else:
+        timeEnd = time()
+        print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
         tellUser("Please load the Notes Data-Set, provided by the authors!")
     
     print()
     print("---> Checking that Messed Up DataSet exists                                                     ", end="")
+    timeStart = time()
 
     currentDir = getcwd()
     folder = PREDICTION_SET_SOURCE
@@ -1374,7 +1441,8 @@ def checkForDependencies():
     if count2 < 55:
         tellUser("Please load the Messed Up Notes Data-Set, provided by the authors!")
     
-    print("   -->Done")
+    timeEnd = time()
+    print("   -->Done", "...Time passed: (H:M:S)", strftime("%H:%M:%S", gmtime(timeEnd - timeStart)))
 ###
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
 
