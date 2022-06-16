@@ -2809,7 +2809,7 @@ def plotMask(fig, newImg, mask, imgName, newMessage):
 ###
 
 def applySobelNegative45Mask(img):
-    mask = np.array(    [[ 2, -1,  0],
+    mask = np.array(    [[-2, -1,  0],
                          [-1,  0,  1],
                          [ 0,  1,  2]] 
             )
@@ -5335,7 +5335,7 @@ def executeProcessingChoice(intVal, show, save):
                 imgNameToAppend = "ProcessedColour_"
                 result = processColourPicture(image, False) # BGR pic
 
-                success = saveFile(folder, imgPath, imgNameToAppend, RGB_to_BGR(result) )
+                success = saveFile(folder, imgPath, imgNameToAppend, result)
                 if (success):
                     tellUser("Saved successfully!", labelUpdates)
                 else:
@@ -5389,7 +5389,7 @@ def processColourPicture(image, show):
 
         numRows = 2
         numColumns = 2
-        modifiedImageArray = [BGR_to_RGB(image), alignedImage, colourFixedImage, answer]
+        modifiedImageArray = [BGR_to_RGB(image), BGR_to_RGB(alignedImage), BGR_to_RGB(colourFixedImage), BGR_to_RGB(answer)]
         labelArray = ["Original Image", "Aligned Image", "Histogram Equalized Image", "De Noised Image"]
 
         plotImagesSideBySide(fig, modifiedImageArray, labelArray, numRows, numColumns)
