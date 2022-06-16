@@ -1,0 +1,34 @@
+COMP702_CourseProject
+UKZN COMP702 Course Project (mage Processing and Computer Vision)
+
+For a more detatiled howTo please view the readMe.md
+
+How to use: Bank Note Recognition 
+
+Designed and implemented by Alexander Goudemond (219030365) and Sumeith Ishwanthlal (219006284)
+
+Installation:
+A Python installation is required perferably with Anaconda.
+
+The following packages are required:
+  - PIL                 
+  - tkinter
+  - concurrent.futures
+  - openCV
+  - matplotlib
+  - numpy
+  - skimage
+  - mahotas
+  - scipy
+  - sklearn
+  - pickle
+
+To run:
+  Run the Python script "bank_note_recognition.py"
+
+  A GUI will open and there will be 3 options:
+  1. Classify an image
+  2. Experiment with Images
+  3. Exit
+  
+	
