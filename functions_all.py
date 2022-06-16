@@ -531,7 +531,61 @@ def executePredictionChoice(intVal):
 
                 plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), contouredImage, result)
 
-            else:
+            elif (intVal == 11):
+                # Individual Histogram Equalized & Canny and Negative & Haralick Feature Prediction
+
+                # 1) process grayscale image
+                processedImage = processGrayPicture(image, False)
+
+                #2) get Canny and Negative Image
+                contouredImage = getCannyAndNegative(processedImage)
+
+                # 3) get Haralick Features
+                picHaralick = getHaralickFeatures(contouredImage)
+                
+                # 4) Do prediction
+                folderName = "Canny_Negative_HistEqGray_Resized_Notes_DataSet"
+                haralick_10, haralick_20, haralick_50, haralick_100, \
+                    haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="CannyNegative_HistEq_haralick_features.txt")
+                
+                referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+                # print("Reference Haralick", referenceHaralick)
+
+                predictionVector = haralickFeaturesComparison(picHaralick, referenceHaralick=referenceHaralick)
+                print("Prediction Vector:", predictionVector)
+
+                result = explainPrediction(predictionVector)
+
+                plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), contouredImage, result)
+
+            elif (intVal == 13):
+                # Individual Histogram Equalized & Canny and Negative & Haralick Feature Prediction
+
+                # 1) process grayscale image
+                processedImage = processGrayPicture(image, False)
+
+                #2) get K Means Image
+                contouredImage = getKMeans5(processedImage)
+
+                # 3) get Haralick Features
+                picHaralick = getHaralickFeatures(contouredImage)
+                
+                # 4) Do prediction
+                folderName = "Canny_Negative_HistEqGray_Resized_Notes_DataSet"
+                haralick_10, haralick_20, haralick_50, haralick_100, \
+                    haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="CannyNegative_HistEq_haralick_features.txt")
+                
+                referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+                # print("Reference Haralick", referenceHaralick)
+
+                predictionVector = haralickFeaturesComparison(picHaralick, referenceHaralick=referenceHaralick)
+                print("Prediction Vector:", predictionVector)
+
+                result = explainPrediction(predictionVector)
+
+                plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), contouredImage, result)
+
+            else:   
                 tellUser("Please select an option", labelUpdates)
         else:
             tellUser("Unable to open colour image for prediction window...", labelUpdates)
@@ -542,6 +596,8 @@ def executePredictionChoice(intVal):
             folderToCompare=PREDICTION_SET_SOURCE
 
             bulkColourClassification(folderToCompare=folderToCompare)
+
+            tellUser("Results in Terminal!", labelUpdates)
         
         elif(intVal == 4):
             # Bulk Prediction Histogram Equalization colour
@@ -549,6 +605,7 @@ def executePredictionChoice(intVal):
 
             bulkColourClassificationHistEq(folderToCompare=folderToCompare)
             
+            tellUser("Results in Terminal!", labelUpdates)
         
         elif(intVal == 6):
             # Bulk Prediction Simple Haralick
@@ -562,6 +619,8 @@ def executePredictionChoice(intVal):
             referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare)
+
+            tellUser("Results in Terminal!", labelUpdates)
         
         elif (intVal == 8):
             # Bulk Prediction Histogram Equalization Haralick
@@ -576,6 +635,8 @@ def executePredictionChoice(intVal):
             referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare)
+
+            tellUser("Results in Terminal!", labelUpdates)
         
         elif (intVal == 10):
             # Bulk Prediction Histogram Equalization Contoured Haralick
@@ -589,6 +650,38 @@ def executePredictionChoice(intVal):
             referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare) 
+
+            tellUser("Results in Terminal!", labelUpdates)
+        
+        elif(intVal == 12):
+            # Bulk Prediction Histogram Equalization Canny and Negative Haralick
+            folderToCompare=PREDICTION_SET_SOURCE
+
+            folderName = "Canny_Negative_HistEqGray_Resized_Notes_DataSet"
+            
+            haralick_10, haralick_20, haralick_50, haralick_100, \
+                haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="CannyNegative_HistEq_haralick_features.txt")
+            
+            referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+
+            bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare) 
+
+            tellUser("Results in Terminal!", labelUpdates)
+        
+        elif(intVal == 14):
+            # Bulk Prediction Histogram Equalization CK means Haralick
+            folderToCompare=PREDICTION_SET_SOURCE
+
+            folderName = "KMeansCluster_HistEqGray_Resized_Notes_DataSet"
+            
+            haralick_10, haralick_20, haralick_50, haralick_100, \
+                haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="KMeansCluster_HistEq_haralick_features.txt")
+            
+            referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+
+            bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare) 
+
+            tellUser("Results in Terminal!", labelUpdates)
         
         else:
             tellUser("Please select an option...", labelUpdates)
@@ -932,7 +1025,7 @@ def getColourVectorsHistEq():
 
 def checkForDependencies():
 
-    print("---> Checking if Notes_DataSet exists")
+    print("\n---> Checking if Notes_DataSet exists                                                           ", end="")
 
     # ensure 55 pictures present
     currentDir = getcwd()
@@ -945,9 +1038,10 @@ def checkForDependencies():
             count1 += 1
     
     if (count1 >= 55):
+        print("   -->Done")
         # only progress if Notes_DataSet is present
 
-        print("---> Checking if Resized_Notes_DataSet exists")
+        print("---> Checking if Resized_Notes_DataSet exists                                                   ", end="")
 
         desiredFolder = "Resized_Notes_DataSet"
 
@@ -980,7 +1074,9 @@ def checkForDependencies():
             (x, y) = (512, 1024)
             bulkResize(x, y)
 
-        print("---> Checking if HistEqColour_Resized_Notes_DataSet exists")
+        print("   -->Done")
+
+        print("---> Checking if HistEqColour_Resized_Notes_DataSet exists                                      ", end="")
 
         desiredFolder = "HistEqColour_Resized_Notes_DataSet"
 
@@ -1011,7 +1107,9 @@ def checkForDependencies():
         if (count1 < 55):
             bulkColourHistEq()
 
-        print("---> Checking if HistEqGray_Resized_Notes_DataSet exists")
+        print("   -->Done")
+
+        print("---> Checking if HistEqGray_Resized_Notes_DataSet exists                                        ", end="")
 
         desiredFolder = "HistEqGray_Resized_Notes_DataSet"
 
@@ -1041,8 +1139,10 @@ def checkForDependencies():
 
         if (count1 < 55):
             bulkGrayHistEq()
-        
-        print("---> Checking if Contoured_HistEqGray_Resized_Notes_DataSet exists")
+
+        print("   -->Done")
+
+        print("---> Checking if Contoured_HistEqGray_Resized_Notes_DataSet exists                              ", end="")
 
         desiredFolder = "Contoured_HistEqGray_Resized_Notes_DataSet"
 
@@ -1073,7 +1173,77 @@ def checkForDependencies():
         if (count1 < 55):
             bulkGrayHistEqContoured()
         
-        print("---> Checking Reference_Materials has simple colour information #1")
+        print("   -->Done")
+
+        print("---> Checking if Canny_Negative_HistEqGray_Resized_Notes_DataSet exists                         ", end="")
+
+        desiredFolder = "Canny_Negative_HistEqGray_Resized_Notes_DataSet"
+
+        # create desiredFolder
+        if ( not exists(desiredFolder) ):
+            currentDir = getcwd()
+            destinationFolder = currentDir + "\\" + desiredFolder
+
+            # create directory
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+        
+        # ensure 55 pictures present
+        currentDir = getcwd()
+        folder = desiredFolder
+        path = walk(currentDir + "\\" + folder)
+
+        count1 = 0
+        for root, directories, files in path:
+            for file in files:
+                count1 += 1
+
+        if (count1 < 55):
+            bulkGrayHistEqCannyNeg()
+
+        print("   -->Done")
+
+        print("---> Checking if KMeansCluster_HistEqGray_Resized_Notes_DataSet exists                          ", end="")
+
+        desiredFolder = "KMeansCluster_HistEqGray_Resized_Notes_DataSet"
+
+        # create desiredFolder
+        if ( not exists(desiredFolder) ):
+            currentDir = getcwd()
+            destinationFolder = currentDir + "\\" + desiredFolder
+
+            # create directory
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+        
+        # ensure 55 pictures present
+        currentDir = getcwd()
+        folder = desiredFolder
+        path = walk(currentDir + "\\" + folder)
+
+        count1 = 0
+        for root, directories, files in path:
+            for file in files:
+                count1 += 1
+
+        if (count1 < 55):
+            bulkGrayHistEqKMeansCluster()
+        
+        print("   -->Done")
+
+        print()
+        
+        print("---> Checking Reference_Materials has simple colour information #1                              ", end="")
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1086,7 +1256,9 @@ def checkForDependencies():
             array = getClustersOfImages(folderName)
             save3DArray(array, "Reference_Materials", desiredFile)
         
-        print("---> Checking Reference_Materials has simple colour information #2")
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has simple colour information #2                              ", end="")
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1095,7 +1267,9 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveColourTrends()
         
-        print("---> Checking Reference_Materials has Histogram Equalized colour information #1")
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has Histogram Equalized colour information #1                 ", end="")
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1109,7 +1283,9 @@ def checkForDependencies():
             array = getClustersOfImages(folderName)
             save3DArray(array, "Reference_Materials", desiredFile)
         
-        print("---> Checking Reference_Materials has Histogram Equalized colour information #2")
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has Histogram Equalized colour information #2                 ", end="")
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -1119,7 +1295,9 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveColourTrendsHistEq()
 
-        print("---> Checking Reference_Materials has Haralick information #1")
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has Haralick information #1                                   ", end="")
         
         # haralick reference
         desiredFolder = "Reference_Materials"
@@ -1128,8 +1306,10 @@ def checkForDependencies():
 
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
-        
-        print("---> Checking Reference_Materials has Histogram Equalized Haralick information")
+
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has Histogram Equalized Haralick information                  ", end="")
         
         # haralick reference
         desiredFolder = "Reference_Materials"
@@ -1139,7 +1319,10 @@ def checkForDependencies():
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
         
-        print("---> Checking Reference_Materials has Histogram Equalized Complete Contours Haralick information")
+
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has Histogram Equalized Complete Contours Haralick information", end="")
         
         # haralick reference
         desiredFolder = "Reference_Materials"
@@ -1148,6 +1331,32 @@ def checkForDependencies():
 
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
+        
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has Histogram Equalized Canny Negative Haralick information   ", end="")
+        
+        # haralick reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "CannyNegative_HistEq_haralick_features.txt"
+        folderName = "Canny_Negative_HistEqGray_Resized_Notes_DataSet"
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
+        
+        print("   -->Done")
+
+        print("---> Checking Reference_Materials has Histogram Equalized KMeans Clustering Haralick information", end="")
+        
+        # haralick reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "KMeansCluster_HistEq_haralick_features.txt"
+        folderName = "KMeansCluster_HistEqGray_Resized_Notes_DataSet"
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
+        
+        print("   -->Done")
         
     else:
         tellUser("Please load the Notes Data-Set, provided by the authors!")
@@ -1483,6 +1692,124 @@ def bulkColourHistEq():
             colourFixedImage = colourHistogramEqualization(image)
 
             success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEqColour_", image=colourFixedImage)
+            
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures changed Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are changed...", labelUpdates)
+###
+
+def getCannyAndNegative(img):
+    (x, y) = img.shape
+    resizedImg = cv2.resize(img,(256,256))
+    # Compute the threshold of the grayscale image
+    value1 , threshImg = cv2.threshold(resizedImg, np.mean(resizedImg), 255, cv2.THRESH_BINARY_INV)
+    # canny edge detection
+    cannyImg = cv2.Canny(threshImg, 0,255)
+    # dilate edges detected.
+    edges = cv2.dilate(cannyImg, None)
+
+    modifiedImage = cv2.resize(edges, (y, x)) # resize
+
+    result = negImage(modifiedImage)
+
+    return result
+###
+
+def getKMeans5(img):
+    # K-Means Clustering
+        twoDimage = img.reshape((-1,1)) # Transform into a 1D matrix
+        # print(twoDimage.shape)
+        # print(twoDimage[0])
+        twoDimage = np.float32(twoDimage) # float32 data type needed for this function
+        # print(twoDimage[0])
+
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        attempts=10
+
+        K = 5
+
+        ret, label, center = cv2.kmeans(twoDimage, K, None, criteria, attempts, cv2.KMEANS_PP_CENTERS)
+        center = np.uint8(center)
+        res = center[label.flatten()]
+        result_image = res.reshape((img.shape))
+
+        return result_image
+##
+
+def bulkGrayHistEqKMeansCluster():
+    desiredFolder = "KMeansCluster_HistEqGray_Resized_Notes_DataSet"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + desiredFolder
+    folder = "Resized_Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_GRAYSCALE)
+
+            grayFixedImage = getKMeans5(image)
+
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="FiveCluster_", image=grayFixedImage)
+            
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures changed Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are changed...", labelUpdates)
+###
+
+def bulkGrayHistEqCannyNeg():
+    desiredFolder = "Canny_Negative_HistEqGray_Resized_Notes_DataSet"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + desiredFolder
+    folder = "Resized_Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_GRAYSCALE)
+
+            grayFixedImage = getCannyAndNegative(image)
+
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="CannyNeg_", image=grayFixedImage)
             
     path = walk(destinationFolder)
     count2 = 0
