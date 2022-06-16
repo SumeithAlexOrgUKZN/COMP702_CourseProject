@@ -351,8 +351,8 @@ def conductPrediction():
     Radiobutton(predictionWindow, text="Bulk Histogram Equalized & Contoured & Haralick Feature Prediction", variable=predictionOption, value=10).pack(anchor=W)
     Radiobutton(predictionWindow, text="Individual Histogram Equalized & Canny Negative & Haralick Feature Prediction", variable=predictionOption, value=11).pack(anchor=W)
     Radiobutton(predictionWindow, text="Bulk Histogram Equalized & Canny Negative & Haralick Feature Prediction", variable=predictionOption, value=12).pack(anchor=W)
-    Radiobutton(predictionWindow, text="Individual Histogram Equalized & K-Nearest & Haralick Feature Prediction", variable=predictionOption, value=13).pack(anchor=W)
-    Radiobutton(predictionWindow, text="Bulk Histogram Equalized & K-Nearest & Haralick Feature Prediction", variable=predictionOption, value=14).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Histogram Equalized & K-Means Cluster & Haralick Feature Prediction", variable=predictionOption, value=13).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Histogram Equalized & K-Means Cluster & Haralick Feature Prediction", variable=predictionOption, value=14).pack(anchor=W)
 
     Button(predictionWindow, text="Predict!", width=50, bg='gray',
         command=lambda: executePredictionChoice(intVal=predictionOption.get())
@@ -1360,6 +1360,8 @@ def checkForDependencies():
     else:
         tellUser("Please load the Notes Data-Set, provided by the authors!")
     
+    print()
+    print("---> Checking that Messed Up DataSet exists                                                     ", end="")
 
     currentDir = getcwd()
     folder = PREDICTION_SET_SOURCE
@@ -1372,6 +1374,8 @@ def checkForDependencies():
     
     if count2 < 55:
         tellUser("Please load the Messed Up Notes Data-Set, provided by the authors!")
+    
+    print("   -->Done")
 ###
 #------------------------------------------------------------------------------------DataSet Exploration Functions--------------
 
