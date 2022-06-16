@@ -53,8 +53,8 @@ from types import NoneType # added for Alex Code
 #-----------------------------------------------CHANGE THIS TO SEE DIFFERENT RESULTS-------------#
 REFERENCE_MATERIAL_SOURCE = "Resized_Notes_DataSet"
 # REFERENCE_MATERIAL_SOURCE = "K_Means_Cluster"
-# PREDICTION_SET_SOURCE = "MessedUp_Notes_DataSet"
-PREDICTION_SET_SOURCE = "Resized_Notes_DataSet"
+PREDICTION_SET_SOURCE = "MessedUp_Notes_DataSet"
+# PREDICTION_SET_SOURCE = "Resized_Notes_DataSet"
 #-----------------------------------------------CHANGE THIS TO SEE DIFFERENT RESULTS-------------#
 # Key functions are saveHaralickTrends and saveColourTrends
 # Key functions include playfulFunction
@@ -335,19 +335,82 @@ def chooseExperimentMethod():
 def conductPrediction():
     predictionWindow = Toplevel(window)
     predictionWindow.title("Please Choose the type of Prediction")
-    predictionWindow.geometry("300x300")
+    predictionWindow.geometry("500x600")
 
     predictionOption = IntVar()
     predictionOption.set(0)
     
-    Radiobutton(predictionWindow, text="Individual Colour Feature Prediction", variable=predictionOption, value=1).pack(anchor=W)
-    Radiobutton(predictionWindow, text="Bulk Colour Feature Prediction", variable=predictionOption, value=2).pack(anchor=W)
-    Radiobutton(predictionWindow, text="Individual Simple Haralick Feature Prediction", variable=predictionOption, value=3).pack(anchor=W)
-    Radiobutton(predictionWindow, text="Bulk Simple Haralick Feature Prediction", variable=predictionOption, value=4).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Simple Colour Feature Prediction", variable=predictionOption, value=1).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Colour Simple Feature Prediction", variable=predictionOption, value=2).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Histogram Equalized Colour Feature Prediction", variable=predictionOption, value=3).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Colour Histogram Equalized Feature Prediction", variable=predictionOption, value=4).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Simple Haralick Feature Prediction", variable=predictionOption, value=5).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Simple Haralick Feature Prediction", variable=predictionOption, value=6).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Histogram Equalized Haralick Feature Prediction", variable=predictionOption, value=7).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Histogram Equalized Haralick Feature Prediction", variable=predictionOption, value=8).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Histogram Equalized & Contoured & Haralick Feature Prediction", variable=predictionOption, value=9).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Histogram Equalized & Contoured & Haralick Feature Prediction", variable=predictionOption, value=10).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Histogram Equalized & Canny Negative & Haralick Feature Prediction", variable=predictionOption, value=11).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Histogram Equalized & Canny Negative & Haralick Feature Prediction", variable=predictionOption, value=12).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Individual Histogram Equalized & K-Nearest & Haralick Feature Prediction", variable=predictionOption, value=13).pack(anchor=W)
+    Radiobutton(predictionWindow, text="Bulk Histogram Equalized & K-Nearest & Haralick Feature Prediction", variable=predictionOption, value=14).pack(anchor=W)
 
     Button(predictionWindow, text="Predict!", width=50, bg='gray',
         command=lambda: executePredictionChoice(intVal=predictionOption.get())
     ).pack(anchor=W, side="top")
+###
+
+def plotResults(image, processedImage, result):
+    fig = plt.figure(num="Results", figsize=(10, 4))
+    plt.clf() # Should clear last plot but keep window open?
+
+    fig.add_subplot(1, 3, 1)
+    plt.imshow( image, cmap='gray')
+    plt.title("Original", wrap=True)
+    plt.axis('off') #Removes axes
+
+    fig.add_subplot(1, 3, 2)
+    plt.imshow( processedImage, cmap='gray')
+    plt.title("Processed", wrap=True)
+    plt.axis('off') #Removes axes
+
+    fig.add_subplot(1, 3, 3)
+    plt.text(0.2, 0.5, "Hit Vector revealed prediction of: " + result)
+    # plt.table(cellText=[predictionVector, ["Final Prediction:", "", "", result, "", ""]], loc='center')
+    plt.axis('off') #Removes axes
+
+    plt.show()
+###
+
+def getCompleteContour(img):
+    (x, y) = img.shape
+    resizedImg = cv2.resize(img,(256,256))
+
+    # Compute the threshold of the grayscale image
+    value1 , threshImg = cv2.threshold(resizedImg, np.mean(resizedImg), 255, cv2.THRESH_BINARY_INV)
+
+    # canny edge detection
+    cannyImg = cv2.Canny(threshImg, 0,255)
+
+    # dilate edges detected.
+    edges = cv2.dilate(cannyImg, None)
+
+    # find all the open/closed regions in the image and store (cnt). (-1 subscript since the function returns a two-element tuple)
+    # The - pass them through the sorted function to access the largest contours first.
+    cnt = sorted(cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2], key=cv2.contourArea)[-1]
+
+    # Create a zero pixel mask that has equal shape and size to the original image.
+    mask = np.zeros((256,256), np.uint8)
+
+    # Draw the detected contours on the created mask.
+    masked = cv2.drawContours(mask, [cnt], -1, 255, -1)
+
+    # bitwise AND operation on the original image (img) and the mask
+    dst = cv2.bitwise_and(resizedImg, resizedImg, mask=mask)
+    
+    modifiedImage = cv2.resize(dst, (y, x)) # resize
+
+    return modifiedImage
 ###
 
 def executePredictionChoice(intVal):
@@ -356,7 +419,7 @@ def executePredictionChoice(intVal):
     # ensure environment ready to begin
     checkForDependencies()
 
-    if (intVal != 2) and (intVal != 4):
+    if (intVal % 2 == 1):
         window.filename = openGUI("Select an Image...")
 
         # BGR because OpenCv Functions
@@ -376,27 +439,24 @@ def executePredictionChoice(intVal):
 
                 result = explainPrediction(predictionVector)
 
-                fig = plt.figure(num="Results", figsize=(10, 4))
-                plt.clf() # Should clear last plot but keep window open?
-
-                fig.add_subplot(1, 3, 1)
-                plt.imshow( BGR_to_RGB(image), cmap='gray')
-                plt.title("Original", wrap=True)
-                plt.axis('off') #Removes axes
-
-                fig.add_subplot(1, 3, 2)
-                plt.imshow( BGR_to_RGB(processedImage), cmap='gray')
-                plt.title("Processed", wrap=True)
-                plt.axis('off') #Removes axes
-
-                fig.add_subplot(1, 3, 3)
-                plt.text(0.2, 0.5, "Hit Vector revealed prediction of: " + result)
-                # plt.table(cellText=[predictionVector, ["Final Prediction:", "", "", result, "", ""]], loc='center')
-                plt.axis('off') #Removes axes
-
-                plt.show()
-
+                plotResults(BGR_to_RGB(image), BGR_to_RGB(processedImage), result)
+            
             elif (intVal == 3):
+                # Individual Colour Histogram Equalized Image
+                # 1) process colour image
+                processedImage = processColourPicture(image, False)
+
+                colourInfo = getColourInfo(processedImage)
+                # print(colourInfo)
+
+                predictionVector = colourFeaturesComparisonHistEq(colourInfo)
+                print("Prediction Vector:", predictionVector)
+
+                result = explainPrediction(predictionVector)
+
+                plotResults(BGR_to_RGB(image), BGR_to_RGB(processedImage), result)
+
+            elif (intVal == 5):
                 # Individual Simple Haralick Feature Prediciton
 
                 # 1) process grayscale image
@@ -418,54 +478,117 @@ def executePredictionChoice(intVal):
 
                 result = explainPrediction(predictionVector)
 
-                fig = plt.figure(num="Results", figsize=(10, 4))
-                plt.clf() # Should clear last plot but keep window open?
-
-                fig.add_subplot(1, 3, 1)
-                plt.imshow( cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), cmap='gray')
-                plt.title("Original", wrap=True)
-                plt.axis('off') #Removes axes
-
-                fig.add_subplot(1, 3, 2)
-                plt.imshow( processedImage, cmap='gray')
-                plt.title("Processed", wrap=True)
-                plt.axis('off') #Removes axes
-
-                fig.add_subplot(1, 3, 3)
-                plt.text(0.2, 0.5, "Hit Vector revealed prediction of: " + result)
-                # plt.table(cellText=[predictionVector, ["Final Prediction:", "", "", result, "", ""]], loc='center')
-                plt.axis('off') #Removes axes
-
-                plt.show()
+                plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), processedImage, result)
                
-            # elif (intVal == 4):
-            #     #
+            elif (intVal == 7):
+                # Individual Histogram Equalized Haralick Feature Prediciton
+
+                # 1) process grayscale image
+                processedImage = processGrayPicture(image, False)
+
+                # 2) get Haralick Features
+                picHaralick = getHaralickFeatures(processedImage)
+                
+                # 3) Do prediction
+                folderName = "HistEqGray_Resized_Notes_DataSet"
+                haralick_10, haralick_20, haralick_50, haralick_100, \
+                    haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="HistEq_haralick_features.txt")
+                
+                referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+                # print("Reference Haralick", referenceHaralick)
+
+                predictionVector = haralickFeaturesComparison(picHaralick, referenceHaralick=referenceHaralick)
+                print("Prediction Vector:", predictionVector)
+
+                result = explainPrediction(predictionVector)
+
+                plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), processedImage, result)
+            
+            elif (intVal == 9):
+                # Individual Histogram Equalized & Contoured & Haralick Feature Prediction
+
+                # 1) process grayscale image
+                processedImage = processGrayPicture(image, False)
+
+                #2) get Contoured Image
+                contouredImage = getCompleteContour(processedImage)
+
+                # 3) get Haralick Features
+                picHaralick = getHaralickFeatures(contouredImage)
+                
+                # 4) Do prediction
+                folderName = "Contoured_HistEqGray_Resized_Notes_DataSet"
+                haralick_10, haralick_20, haralick_50, haralick_100, \
+                    haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="Contours_HistEq_haralick_features.txt")
+                
+                referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+                # print("Reference Haralick", referenceHaralick)
+
+                predictionVector = haralickFeaturesComparison(picHaralick, referenceHaralick=referenceHaralick)
+                print("Prediction Vector:", predictionVector)
+
+                result = explainPrediction(predictionVector)
+
+                plotResults(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), contouredImage, result)
 
             else:
                 tellUser("Please select an option", labelUpdates)
         else:
             tellUser("Unable to open colour image for prediction window...", labelUpdates)
     else:
-        # Bulk Prediction
+        
         if (intVal == 2):
+            # Bulk Prediction simple colour
             folderToCompare=PREDICTION_SET_SOURCE
-
 
             bulkColourClassification(folderToCompare=folderToCompare)
         
         elif(intVal == 4):
+            # Bulk Prediction Histogram Equalization colour
+            folderToCompare=PREDICTION_SET_SOURCE
 
+            bulkColourClassificationHistEq(folderToCompare=folderToCompare)
+            
+        
+        elif(intVal == 6):
+            # Bulk Prediction Simple Haralick
             folderToCompare=PREDICTION_SET_SOURCE
 
             folderName = REFERENCE_MATERIAL_SOURCE
             
-
             haralick_10, haralick_20, haralick_50, haralick_100, \
                 haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="simple_haralick_features.txt")
             
             referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
 
             bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare)
+        
+        elif (intVal == 8):
+            # Bulk Prediction Histogram Equalization Haralick
+            folderToCompare=PREDICTION_SET_SOURCE
+
+            folderName = "HistEqGray_Resized_Notes_DataSet"
+            
+
+            haralick_10, haralick_20, haralick_50, haralick_100, \
+                haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="HistEq_haralick_features.txt")
+            
+            referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+
+            bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare)
+        
+        elif (intVal == 10):
+            # Bulk Prediction Histogram Equalization Contoured Haralick
+            folderToCompare=PREDICTION_SET_SOURCE
+
+            folderName = "Contoured_HistEqGray_Resized_Notes_DataSet"
+            
+            haralick_10, haralick_20, haralick_50, haralick_100, \
+                haralick_200 = getHaralickReferenceInfo(folderToUse=folderName, fileName="Contours_HistEq_haralick_features.txt")
+            
+            referenceHaralick = [haralick_10, haralick_20, haralick_50, haralick_100, haralick_200]
+
+            bulkHaralickClassification(referenceHaralick, folderToCompare=folderToCompare) 
         
         else:
             tellUser("Please select an option...", labelUpdates)
@@ -507,7 +630,28 @@ def bulkColourClassification(folderToCompare):
 
             colourInfo = getColourInfo(processedImage)
 
-            predictionVector = colourFeaturesComparison(colourInfo)
+            predictionVector = colourFeaturesComparison(colourInfo) 
+            result = explainPrediction(predictionVector)
+            print(file, ":::::", predictionVector, ":::::", result)
+            print()
+###
+
+def bulkColourClassificationHistEq(folderToCompare):
+    currentDir = getcwd()
+    folder = folderToCompare
+    # folder = "Notes_DataSet"
+    destinationFolder = currentDir + "\\" + folder
+    path = walk(destinationFolder)    
+
+    for root, directories, files in path:
+        for file in files:
+            success, image = imageToColourBGR(destinationFolder + "\\" + file)
+
+            processedImage = processColourPicture(image, False)
+
+            colourInfo = getColourInfo(processedImage)
+
+            predictionVector = colourFeaturesComparisonHistEq(colourInfo) 
             result = explainPrediction(predictionVector)
             print(file, ":::::", predictionVector, ":::::", result)
             print()
@@ -620,9 +764,130 @@ def colourFeaturesComparison(colourFeatures):
     return scoreVector
 ###
 
+# this function gets the reference values, and calculates the best result for each image
+def colourFeaturesComparisonHistEq(colourFeatures):
+    # print("inside colourFeaturesComparison")
+    # print(colourFeatures)
+
+    # 1) get references
+    overallValues, overallVariances = getColourVectorsHistEq()
+
+    # print("Overall values", overallValues, "\n")
+
+    globalAverages = []; globalModes = []
+    v1 = []; v2 = [] # variances
+    for i in range(len(overallValues)):
+        if (i % 2 == 0):
+            globalAverages.append(overallValues[i])
+            v1.append(overallVariances[i])
+        else:
+            globalModes.append(overallValues[i])
+            v2.append(overallVariances[i])
+
+    # print(averages, modes, sep="\n\n")
+
+    # averages and modes are the 1X3 vectors for our image
+    averages = [];modes = []
+
+    for i in range(len(colourFeatures)):
+        averages.append(colourFeatures[i][1][0])
+        modes.append(colourFeatures[i][1][1])
+    
+    # print(globalAverages, "\n", averages)
+    # print()
+    # print(globalModes, "\n", modes)
+
+    # Now, lets loop through the 5 sets of data and calculate the score.
+    scoreVector = []
+    key = ["R010", "R020", "R050", "R100", "R200"]
+    val1, val2 = 0, 0
+    minVal1 = -1; minIndex1 = -1
+    minVal2 = -1; minIndex2 = -1
+    for i in range(3):
+        # scan each row for Averages and Modes
+        for j in range(5):
+            val1 = abs(float(averages[i]) - float(globalAverages[j][i]))
+            val2 = abs(float(modes[i]) - float(globalModes[j][i]))
+
+            # instantiate
+            if (minVal1 == -1):
+                minVal1 = val1; minIndex1 = j
+                minVal2 = val2; minIndex2 = j
+
+            if (val1 < minVal1):
+                minVal1 = val1; minIndex1 = j
+            elif (val2 < minVal2):
+                minVal2 = val2; minIndex2 = j
+
+            # within range
+            # if (val1 < abs(float(globalAverages[i][j])) -float(v1[i][j])):
+            #     averageSum += val1
+            # # within range
+            # if (val2 < abs(float(globalModes[i][j])) -float(v2[i][j])):
+            #     modeSum += val2
+
+        # at this point - the lowest score is the best hit!
+
+        # print(averageSum, modeSum)
+        scoreVector.append(key[minIndex1])
+        scoreVector.append(key[minIndex2])
+
+        #reset
+        minVal1 = -1; minIndex1 = -1
+        minVal2 = -1; minIndex2 = -1
+
+    # print(scoreVector)
+    return scoreVector
+###
+
 def getColourVectors():
     # read in data from desiredFile
     desiredFile = "Reference_Materials" + "\\" + "colour_trends.txt"
+
+    with open(desiredFile) as f:
+        lines = f.readlines()
+    
+    counter = 0
+    valueArray = [[]]
+    varianceArray = [[]]
+    tempValues = []; tempVariances = []
+    dataArray = []
+    for i in range(len(lines)):
+        # skip first part of these paragraphs
+        if (i == 0) or (i % 7 == 0):
+            continue
+            
+        # append
+        if (counter % 3 == 0):
+            # skip first run
+            if (counter != 0):
+                valueArray.append(tempValues)
+                varianceArray.append(tempVariances)
+                tempValues = []; tempVariances = [] # reset
+
+        data = lines[i]
+        if (i != len(lines)-1): data = data[:-1] # remove end chars, unless last element
+        dataArray = data.split()
+
+        # print(dataArray)
+        # print("0", dataArray[2])
+        # print("0", dataArray[3])
+
+        tempValues.append(dataArray[2])
+        tempVariances.append(dataArray[3])
+
+        counter += 1
+    
+    # final iteration has more data:
+    valueArray.append(tempValues)
+    varianceArray.append(tempVariances)
+
+    return valueArray[ 1 : ], varianceArray[ 1 : ]
+###
+
+def getColourVectorsHistEq():
+    # read in data from desiredFile
+    desiredFile = "Reference_Materials" + "\\" + "HistEq_colour_trends.txt"
 
     with open(desiredFile) as f:
         lines = f.readlines()
@@ -748,7 +1013,7 @@ def checkForDependencies():
 
         print("---> Checking if HistEqGray_Resized_Notes_DataSet exists")
 
-        desiredFolder = REFERENCE_MATERIAL_SOURCE
+        desiredFolder = "HistEqGray_Resized_Notes_DataSet"
 
         # create desiredFolder
         if ( not exists(desiredFolder) ):
@@ -777,7 +1042,38 @@ def checkForDependencies():
         if (count1 < 55):
             bulkGrayHistEq()
         
-        print("---> Checking Reference_Materials has colour information #1")
+        print("---> Checking if Contoured_HistEqGray_Resized_Notes_DataSet exists")
+
+        desiredFolder = "Contoured_HistEqGray_Resized_Notes_DataSet"
+
+        # create desiredFolder
+        if ( not exists(desiredFolder) ):
+            currentDir = getcwd()
+            destinationFolder = currentDir + "\\" + desiredFolder
+
+            # create directory
+            try:
+                mkdir(destinationFolder)
+            except FileExistsError as uhoh:
+                pass
+            except Exception as uhoh:
+                print("New Error:", uhoh)
+                pass
+        
+        # ensure 55 pictures present
+        currentDir = getcwd()
+        folder = desiredFolder
+        path = walk(currentDir + "\\" + folder)
+
+        count1 = 0
+        for root, directories, files in path:
+            for file in files:
+                count1 += 1
+
+        if (count1 < 55):
+            bulkGrayHistEqContoured()
+        
+        print("---> Checking Reference_Materials has simple colour information #1")
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -786,11 +1082,11 @@ def checkForDependencies():
         # create desiredFile
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             # folderName = "Resized_Notes_DataSet"
-            folderName = "HistEqColour_Resized_Notes_DataSet"
+            folderName = "Resized_Notes_DataSet"
             array = getClustersOfImages(folderName)
-            save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+            save3DArray(array, "Reference_Materials", desiredFile)
         
-        print("---> Checking Reference_Materials has colour information #2")
+        print("---> Checking Reference_Materials has simple colour information #2")
 
         # colour reference
         desiredFolder = "Reference_Materials"
@@ -798,13 +1094,57 @@ def checkForDependencies():
 
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveColourTrends()
+        
+        print("---> Checking Reference_Materials has Histogram Equalized colour information #1")
 
-        print("---> Checking Reference_Materials has haralick information #1")
+        # colour reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "all_histEq_resized_pictures_colour_features.txt"
+        
+        
+        # create desiredFile
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            # folderName = "Resized_Notes_DataSet"
+            folderName = "HistEqColour_Resized_Notes_DataSet"
+            array = getClustersOfImages(folderName)
+            save3DArray(array, "Reference_Materials", desiredFile)
+        
+        print("---> Checking Reference_Materials has Histogram Equalized colour information #2")
+
+        # colour reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "HistEq_colour_trends.txt"
+        
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveColourTrendsHistEq()
+
+        print("---> Checking Reference_Materials has Haralick information #1")
         
         # haralick reference
         desiredFolder = "Reference_Materials"
         desiredFile = "simple_haralick_features.txt"
         folderName = REFERENCE_MATERIAL_SOURCE
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
+        
+        print("---> Checking Reference_Materials has Histogram Equalized Haralick information")
+        
+        # haralick reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "HistEq_haralick_features.txt"
+        folderName = "HistEqGray_Resized_Notes_DataSet"
+
+        if ( not exists(desiredFolder + "\\" + desiredFile) ):
+            saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
+        
+        print("---> Checking Reference_Materials has Histogram Equalized Complete Contours Haralick information")
+        
+        # haralick reference
+        desiredFolder = "Reference_Materials"
+        desiredFile = "Contours_HistEq_haralick_features.txt"
+        folderName = "Contoured_HistEqGray_Resized_Notes_DataSet"
 
         if ( not exists(desiredFolder + "\\" + desiredFile) ):
             saveHaralickTrends(folderOrigin=folderName, fileName=desiredFile)
@@ -1157,7 +1497,7 @@ def bulkColourHistEq():
 ###
 
 def bulkGrayHistEq():
-    desiredFolder = REFERENCE_MATERIAL_SOURCE
+    desiredFolder = "HistEqGray_Resized_Notes_DataSet"
     currentDir = getcwd()
     destinationFolder = currentDir + "\\" + desiredFolder
     folder = "Resized_Notes_DataSet"
@@ -1183,6 +1523,46 @@ def bulkGrayHistEq():
             grayFixedImage = histEqualization(image)
 
             success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="HistEqGray_", image=grayFixedImage)
+            
+    path = walk(destinationFolder)
+    count2 = 0
+    for root, directories, files in path:
+        for file in files:
+            count2 += 1
+    
+    if (count1 == count2):
+        tellUser("Pictures changed Successfully", labelUpdates)
+    else:
+        tellUser("Not all pictures are changed...", labelUpdates)
+###
+
+def bulkGrayHistEqContoured():
+    desiredFolder = "Contoured_HistEqGray_Resized_Notes_DataSet"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + desiredFolder
+    folder = "HistEqGray_Resized_Notes_DataSet"
+    path = walk(currentDir + "\\" + folder)
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    count1 = 0
+    for root, directories, files in path:
+        for file in files:
+            count1 += 1
+
+            temp = currentDir + "\\" + folder + "\\" + file
+            image = cv2.imread(temp, cv2.IMREAD_GRAYSCALE)
+
+            grayFixedImage = getCompleteContour(image)
+
+            success = saveFile(folder=desiredFolder, imgPath=currentDir + "\\" + folder + "\\" + file, imgNameToAppend="Contoured_", image=grayFixedImage)
             
     path = walk(destinationFolder)
     count2 = 0
@@ -3881,10 +4261,97 @@ def getColourTrends():
 ###
 
 '''
+    This function will use the existing cluster of colour features, and
+    print the results in a human digestible format
+'''
+def getColourTrendsHistEq():
+    # 1) assume "resized_Notes_DataSet" exists
+    
+    # 2) check if desiredFile exists
+    desiredFile = "Reference_Materials\\all_histEq_resized_pictures_colour_features.txt"
+    if ( not exists(desiredFile) ):
+        # folderName = "Resized_Notes_DataSet"
+        folderName = REFERENCE_MATERIAL_SOURCE
+        array = getClustersOfImages(folderName)
+        save3DArray(array, "Reference_Materials", "all_histEq_resized_pictures_colour_features.txt")
+
+    # 3) read in data from desiredFile
+    with open(desiredFile) as f:
+        lines = f.readlines()
+    
+    # should have 5*7 sets of data
+    counter = 0
+    average, variation = 0.0, 0.0
+    answerArray, tempArray = [], []
+    labelArray = ["R10", "R20", "R50", "R100", "R200"]
+    colourArray = ["Red", "Green", "Blue"]
+    valueArray = ["Average", "Average", "Average", "Mode", "Mode", "Mode"]
+    labelIndex, colourIndex, valueIndex = 0, 0, 0
+
+    # 4) create vectors
+    for line in lines:
+        # skip these rows
+        if (counter == 0):
+            counter += 1
+            continue
+
+        if (counter % 7 == 0):
+            answerArray.append( [labelArray[labelIndex], tempArray] )
+            tempArray = []
+
+            labelIndex += 1
+            counter += 1
+            continue
+
+        # print(line[:-1]) # remove final newline char
+        array = np.array(line[:-1].split())
+        float_array = array.astype(float)
+
+        # get average of the array's elements
+        average = np.average(float_array)
+        variation = (np.max(float_array, axis=0) - np.min(float_array, axis=0)) / 2
+
+        # print(array, ":::", average, variation)
+
+        myString = colourArray[colourIndex] + " " + valueArray[valueIndex]
+        tempArray.append([myString, average, variation])
+
+        counter += 1
+        colourIndex = (colourIndex + 1) % 3 # keep cycling between 3 colours
+        valueIndex = (valueIndex + 1) % 6
+
+    # after for loop runs - need 1 more entry added
+    answerArray.append( [labelArray[labelIndex], tempArray] )
+
+    # print(answerArray)
+    # print("Yay")
+    # 5) return to user
+    return answerArray
+###
+
+'''
     Opens and shows all_resized_pictures_colour_features.txt to user
 '''
 def displayColourTrends():
     array = getColourTrends()
+
+    temp = []
+
+    for a in range(len(array)):
+        print(array[a][0]) # print "R10", etc.
+        for b in range(1, len(array[0])):
+            for c in range(0, len(array[0][1])):
+                temp =array[a][b][c]
+
+                print(temp[0], ": ", temp[1], ", Variation: ", temp[2], sep="")
+        print()
+###
+
+'''
+    Opens and shows all_resized_pictures_colour_features.txt to user
+'''
+def displayColourTrendsHistEq():
+    array = getColourTrendsHistEq()
 
     temp = []
 
@@ -3926,6 +4393,45 @@ def saveColourTrends():
         # rowString += "\n"
 
     fileName = "colour_trends.txt"
+    file = open(destinationFolder + "\\" + fileName, "w+")
+    file.write(rowString[ : -1]) # ignore last char
+    file.close()
+
+    # see if successfulorientation
+    if (exists(destinationFolder + "\\" + fileName)):
+        return True
+    else:
+        return False
+###
+
+def saveColourTrendsHistEq():
+    # print()
+    folderName = "Reference_Materials"
+    currentDir = getcwd()
+    destinationFolder = currentDir + "\\" + folderName
+
+    # create directory
+    try:
+        mkdir(destinationFolder)
+    except FileExistsError as uhoh:
+        pass
+    except Exception as uhoh:
+        print("New Error:", uhoh)
+        pass
+
+    array = getColourTrendsHistEq()
+
+    rowString = ""
+    for a in range(len(array)):
+        rowString += str(array[a][0]) + "\n" # print "R10", etc.
+        for b in range(1, len(array[0])):
+            for c in range(0, len(array[0][1])):
+                temp =array[a][b][c]
+                rowString += str(temp[0]) + " " + str(temp[1]) + " " + str(temp[2]) + "\n"
+
+        # rowString += "\n"
+
+    fileName = "HistEq_colour_trends.txt"
     file = open(destinationFolder + "\\" + fileName, "w+")
     file.write(rowString[ : -1]) # ignore last char
     file.close()
