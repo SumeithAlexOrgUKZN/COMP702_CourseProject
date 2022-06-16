@@ -290,15 +290,15 @@ def chooseExperimentMethod():
         bg = "silver",
         command = chooseOrientation
     )
-    button16 = tk.Button(
-        master = buttonFrameBottom1,
-        text = "14",
-        width = 40,
-        height = 5, 
-        bg = "silver",
-    )
+    # button16 = tk.Button(
+    #     master = buttonFrameBottom1,
+    #     text = "14",
+    #     width = 40,
+    #     height = 5, 
+    #     bg = "silver",
+    # )
     button17 = tk.Button(
-        master = buttonFrameBottom2,
+        master = buttonFrameBottom1,
         text = "Calculate Features",
         width = 40,
         height = 5, 
@@ -328,8 +328,8 @@ def chooseExperimentMethod():
     button1.pack(side = tk.LEFT); button2.pack(side = tk.LEFT); button3.pack(side = tk.LEFT); button4.pack(side = tk.RIGHT)
     button5.pack(side = tk.LEFT); button6.pack(side = tk.LEFT); button7.pack(side = tk.LEFT); button8.pack(side = tk.RIGHT)
     button9.pack(side = tk.LEFT); button10.pack(side = tk.LEFT); button11.pack(side = tk.LEFT); button12.pack(side = tk.RIGHT)
-    button13.pack(side = tk.LEFT); button14.pack(side = tk.LEFT); button15.pack(side = tk.LEFT); button16.pack(side = tk.RIGHT)
-    button17.pack(side = tk.LEFT); button18.pack(side = tk.LEFT); buttonClose.pack(side = tk.LEFT)
+    button13.pack(side = tk.LEFT); button14.pack(side = tk.LEFT); button15.pack(side = tk.LEFT); button17.pack(side = tk.RIGHT)
+    button18.pack(side = tk.LEFT); buttonClose.pack(side = tk.RIGHT)
 ###
 
 def conductPrediction():
@@ -2024,7 +2024,7 @@ def chooseEnhancement():
         Radiobutton(choicesWindow, text="Histogram Equalisation", variable=enhanceOption, value=1).pack(anchor=W)
         Radiobutton(choicesWindow, text="Point Processing: Negative Image", variable=enhanceOption, value=2).pack(anchor=W)
         Radiobutton(choicesWindow, text="Point Processing: Thresholding", variable=enhanceOption, value=3).pack(anchor=W)
-        Radiobutton(choicesWindow, text="Logarithmic Transformations", variable=enhanceOption, value=4).pack(anchor=W)
+        # Radiobutton(choicesWindow, text="Logarithmic Transformations", variable=enhanceOption, value=4).pack(anchor=W)
         Radiobutton(choicesWindow, text="Power Law (Gamma) Transformations", variable=enhanceOption, value=5).pack(anchor=W)
 
         Button(
@@ -2073,10 +2073,10 @@ def executeEnhancement(intVal, img, imgName, show):
         newImg = thresholding(img)
         newMessage = "Thresholded_"
 
-    elif (intVal == 4):
-        # 2 variables here used after this loop
-        newImg = logTransform(img)
-        newMessage = "LogarithmicTransformation_"
+    # elif (intVal == 4):
+    #     # 2 variables here used after this loop
+    #     newImg = logTransform(img)
+    #     newMessage = "LogarithmicTransformation_"
 
     else:
         textBoxWindow = Toplevel(window)
@@ -4008,8 +4008,7 @@ def executeMessUpOption(intVal, img, imgName, show):
         lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
         newImg = brightenImage(img, lightIntensityMatrix)
         newMessage = "Brighten_" 
-
-        
+   
     elif (intVal == 2):
         lightIntensityMatrix = np.ones(img.shape, dtype="uint8") * random.randint(30,150)
         newImg = darkenImage(img, lightIntensityMatrix)
@@ -4083,7 +4082,7 @@ def chooseBulkChanges():
     Radiobutton(bulkWindow, text="Bulk Mess Up", variable=bulkOption, value=2).pack(anchor=W, side="top")
     Radiobutton(bulkWindow, text="Bulk Colour Histogram Equalization", variable=bulkOption, value=3).pack(anchor=W, side="top")
     Radiobutton(bulkWindow, text="Bulk Gray Histogram Equalization", variable=bulkOption, value=4).pack(anchor=W, side="top")
-    Radiobutton(bulkWindow, text="Bulk Gray Playful", variable=bulkOption, value=5).pack(anchor=W, side="top")
+    # Radiobutton(bulkWindow, text="Bulk Gray Playful", variable=bulkOption, value=5).pack(anchor=W, side="top")
 
     Button(bulkWindow, text="Apply Bulk Changes", width=35, bg='gray',
         command=lambda: executeBulkOption(intVal=bulkOption.get()) 
@@ -4107,8 +4106,8 @@ def executeBulkOption(intVal):
         # bulk gray histogram equalization
         bulkGrayHistEq()
     
-    elif (intVal == 5):
-        bulkGrayPlayful()
+    # elif (intVal == 5):
+    #     bulkGrayPlayful()
 
     else:
         tellUser("Please select an option...", labelUpdates)
@@ -4128,9 +4127,9 @@ def chooseFeatures():
 
     Radiobutton(featureWindow, text="Individual Color Channels", variable=featureOption, value=1, width=30).pack(anchor=W, side="top")
     Radiobutton(featureWindow, text="Individual Color Features", variable=featureOption, value=2, width=30).pack(anchor=W, side="top")
-    Radiobutton(featureWindow, text="Show Bulk Color Features", variable=featureOption, value=3, width=30).pack(anchor=W, side="top")
+    # Radiobutton(featureWindow, text="Show Bulk Color Features", variable=featureOption, value=3, width=30).pack(anchor=W, side="top")
     Radiobutton(featureWindow, text="Individual Haralick Grayscale features", variable=featureOption, value=4, width=30).pack(anchor=W, side="top")
-    Radiobutton(featureWindow, text="Show Bulk Haralick Features", variable=featureOption, value=5, width=30).pack(anchor=W, side="top")
+    # Radiobutton(featureWindow, text="Show Bulk Haralick Features", variable=featureOption, value=5, width=30).pack(anchor=W, side="top")
 
     Button(featureWindow, text="Get Features and Show", width=50, bg='gray',
         command=lambda: executeFeatureChoice(intVal=featureOption.get(), show=True)
@@ -4231,24 +4230,24 @@ def executeFeatureChoice(intVal, show):
         else:
             tellUser("Unable to get Colour Image for Colour features...", labelUpdates)
 
-    elif (intVal == 3):
-        # display reference info
-        if (show):
-            displayColourTrends()
-        else:
-            # check if desiredFile exists
-            desiredFile = "Reference_Materials\\all_resized_pictures_colour_features.txt"
-            if ( not exists(desiredFile) ):
-                # folderName = "Resized_Notes_DataSet"
-                foldername = "HistEqColour_Resized_Notes_DataSet"
-                array = getClustersOfImages(folderName)
-                save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
+    # elif (intVal == 3):
+    #     # display reference info
+    #     if (show):
+    #         displayColourTrends()
+    #     else:
+    #         # check if desiredFile exists
+    #         desiredFile = "Reference_Materials\\all_resized_pictures_colour_features.txt"
+    #         if ( not exists(desiredFile) ):
+    #             # folderName = "Resized_Notes_DataSet"
+    #             foldername = "HistEqColour_Resized_Notes_DataSet"
+    #             array = getClustersOfImages(folderName)
+    #             save3DArray(array, "Reference_Materials", "all_resized_pictures_colour_features.txt")
             
-            success = saveColourTrends()
-            if(success):
-                tellUser("File Saved Successfully", labelUpdates)
-            else:
-                tellUser("Unable to Save...", labelUpdates)
+    #         success = saveColourTrends()
+    #         if(success):
+    #             tellUser("File Saved Successfully", labelUpdates)
+    #         else:
+    #             tellUser("Unable to Save...", labelUpdates)
 
     elif (intVal == 4):
         # Individual Haralick Features
@@ -4296,27 +4295,27 @@ def executeFeatureChoice(intVal, show):
         else:
             tellUser("Unable to get grayscale image for Harlick Features...", labelUpdates)
 
-    elif (intVal == 5):
-        folderName = REFERENCE_MATERIAL_SOURCE
-        haralick_10, haralick_20, haralick_50, haralick_100, haralick_200 = getHaralickReferenceInfo(folderName, "simple_haralick_features.txt")
+    # elif (intVal == 5):
+    #     folderName = REFERENCE_MATERIAL_SOURCE
+    #     haralick_10, haralick_20, haralick_50, haralick_100, haralick_200 = getHaralickReferenceInfo(folderName, "simple_haralick_features.txt")
     
-        print(f" R10 haralik features averages are\n: {haralick_10}")
-        print(f" R20 haralik features averages are\n: {haralick_20}")
-        print(f" R50 haralik features averages are\n: {haralick_50}")
-        print(f"R100 haralik features averages are\n: {haralick_100}")
-        print(f"R200 haralik features averages are\n: {haralick_200}")
+    #     print(f" R10 haralik features averages are\n: {haralick_10}")
+    #     print(f" R20 haralik features averages are\n: {haralick_20}")
+    #     print(f" R50 haralik features averages are\n: {haralick_50}")
+    #     print(f"R100 haralik features averages are\n: {haralick_100}")
+    #     print(f"R200 haralik features averages are\n: {haralick_200}")
 
-        if (show):
-            tellUser("Printed in Terminal!", labelUpdates)
-        else:
-            fileName = "simple_haralick_features.txt"
-            folderName = REFERENCE_MATERIAL_SOURCE
-            success = saveHaralickTrends(folderOrigin=folderName, fileName=fileName)    
+    #     if (show):
+    #         tellUser("Printed in Terminal!", labelUpdates)
+    #     else:
+    #         fileName = "simple_haralick_features.txt"
+    #         folderName = REFERENCE_MATERIAL_SOURCE
+    #         success = saveHaralickTrends(folderOrigin=folderName, fileName=fileName)    
 
-            if (success):
-                tellUser("Features saved successfully!", labelUpdates)
-            else:
-                tellUser("Unable to save features", labelUpdates)
+    #         if (success):
+    #             tellUser("Features saved successfully!", labelUpdates)
+    #         else:
+    #             tellUser("Unable to save features", labelUpdates)
 
     else:
         # should never execute
@@ -5238,8 +5237,8 @@ def chooseProcessingOption():
     
     Radiobutton(processingWindow, text="Colour Feature Processing", variable=processingOption, value=1).pack(anchor=W)
     Radiobutton(processingWindow, text="Grayscale Feature Processing", variable=processingOption, value=2).pack(anchor=W)
-    Radiobutton(processingWindow, text="something", variable=processingOption, value=3).pack(anchor=W)
-    Radiobutton(processingWindow, text="something", variable=processingOption, value=4).pack(anchor=W)
+    # Radiobutton(processingWindow, text="something", variable=processingOption, value=3).pack(anchor=W)
+    # Radiobutton(processingWindow, text="something", variable=processingOption, value=4).pack(anchor=W)
 
     Button(processingWindow, text="Process and Show", width=50, bg='gray',
         command=lambda: executeProcessingChoice(intVal=processingOption.get(), show = True, save=False)
