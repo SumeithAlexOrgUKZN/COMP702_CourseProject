@@ -47,7 +47,6 @@ from os.path import exists
 import random
 from math import atan2, pi, sqrt, cos, sin
 from types import NoneType # added for Alex Code
-
 #--------------------------------------------------------------------------------------------------------------Things to change!
 
 #-----------------------------------------------CHANGE THIS TO SEE DIFFERENT RESULTS-------------#
