@@ -41,9 +41,8 @@ from skimage.util import random_noise # used for to inject random noise
 
 # getcwd == Get Current Working Directory, walk = traverses a directory
 from os import getcwd, walk, mkdir, remove
-#from types import NoneType
-
 from os.path import exists
+
 import random
 from math import atan2, pi, sqrt, cos, sin
 from types import NoneType # added for Alex Code
